@@ -4,42 +4,38 @@
 
 ---
 
-## Current state (2026-11-19)
+## Current state (2026-11-19, end of M0)
 
-- **Phase:** Research & planning complete enough to start building. **No code exists yet.** Not yet a git repository.
-- **Research completeness:**
-  - ✅ `competitor-analysis.md`: full, cited.
-  - ✅ `business-model.md`: full, cited.
-  - ✅ `naming-research.md`: domains verified; conflict/trademark checks **incomplete**.
-  - ⚠️ `market-research.md`, `technical-research.md`, `security-and-legal.md`: **partial**. Research was stopped by the founder to start building, and the remaining unknowns are now spike tasks.
-- **Key decisions:** see `decisions.md`.
-  - D-001: positioning.
-  - D-002 and D-003: declarative templates plus site adapters.
-  - D-004: YouTube first, then Reddit and X; no Facebook.
-  - D-006: local-first.
-  - D-007: React, still **Proposed**.
-  - D-010: working brand "Reweave", still **Proposed**.
+- **M0 Foundations: done.**
+  - pnpm workspace.
+  - WXT 0.21.5 + React 19 extension shell with a popup and a background worker.
+  - Package skeletons (`schema`, `compiler`, `adapters`, `templates`, `brand`, `test-fixtures`).
+  - Biome, Vitest, and a Playwright e2e smoke test that loads the real extension in Chromium.
+  - GitHub Actions CI.
+  - `check:manifest` guard.
+  - `pnpm check` and `pnpm test:e2e` pass locally.
+- **CI:** `.github/workflows/ci.yml` hasn't run on GitHub yet; it runs on the first push.
+- **Repo:** public at github.com/developersharif/reweave-ext (`main`).
+- **Decisions:** React confirmed (D-007). MIT and open source (D-016). TypeScript pinned to 6.0.x (D-022). Biome (D-023). Manifest guard (D-024).
+- **Research docs:** technical-research §3–§4 filled in. §5–§6 wait for the M2/M4 spikes.
 
 ## Next action
 
-**Start M0 with T-0.1, then T-0.2.** Concretely:
+**M1, the engine core.** These can start in parallel:
+- **T-1.1** schema + validation-library choice;
+- **T-1.2** css-tree dialect spike;
+- **T-1.3a** attack fixtures.
 
-1. `git init`, then create the pnpm workspace (`apps/*`, `packages/*`), strict TS base config and the root scripts (`check`, `test`, `build`, `dev`).
-2. Load the current WXT docs through Context7 (`resolve-library-id` "wxt", then `query-docs`). Scaffold `apps/extension` with React + TS and confirm the runtime content-script registration API.
-3. Write the WXT version and findings into `docs/research/technical-research.md` §4.
-4. Mark T-0.1 and T-0.2 `done` in `task-tracker.md` and update this file.
-
-T-0.3 (Chrome platform facts) is independent and can run in parallel.
+Then T-1.3 → T-1.4 → T-1.5 → T-1.6 → T-1.7. Use Context7 for css-tree and for Zod/Valibot.
 
 ## Open questions for the founder
 
-1. React (D-007) or Vue for extension UI? Default: React.
-2. Accept "Reweave" as the working brand (D-010)? Runner-ups are in naming-research.md.
-3. Open-source the extension client under MIT (D-016)?
-4. Is there a GitHub org/account to host the repo and the future `templates` repo?
+1. Brand clearance (T-6.6) can wait until M6, but it must happen before the public listing.
+2. The `LICENSE` copyright line reads "developersharif and Reweave contributors". Change it if you want your legal name there.
 
 ## Session log
 
 | Date | Session focus | Outcome | Next |
 |---|---|---|---|
 | 2026-11-19 | Research, naming, strategy, architecture, roadmap | Docs created; research partially interrupted by founder request | T-0.1 |
+| 2026-11-19 | M0 foundations | T-0.1–T-0.6 done; check and e2e green locally | M1 (T-1.1, T-1.2, T-1.3a) |

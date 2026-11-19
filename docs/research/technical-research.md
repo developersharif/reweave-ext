@@ -1,6 +1,6 @@
 # Technical Research
 
-**Status: partial, and designed to be completed by spike tasks.** The broad technical pass was stopped before it wrote results.
+**Status: partial; §3 and §4 completed in M0, the rest is completed by spike tasks.** The broad technical pass was stopped before it wrote results.
 - §2 records what *was* verified, mostly by the competitor analysis, which cites primary sources.
 - §3–§6 are **to be filled in by spike tasks** (T-0.2, T-0.3, T-2.1, T-2.2, T-4.1) with source URLs, measurements and dates.
 - Code must not depend on an item in §3–§6 until it is filled in.
@@ -59,30 +59,35 @@ The run *with* a page CSP was not analyzed to a conclusion. D-014 (no network fr
 
 These counts include bot formatting commits and track popularity as well as breakage, so they are a weak signal. YouTube needs the most ongoing upkeep, consistent with R-03.
 
-## 3. Chrome platform facts (T-0.3, to fill)
+## 3. Chrome platform facts (T-0.3, done 2026-11-19)
 
-| Question | Answer | Source / date |
-|---|---|---|
-| `storage.local` quota; effect of `unlimitedStorage` | | |
-| `storage.sync` total and per-item quotas; write rate limits | | |
-| Does adding entries to `optional_host_permissions` in an update prompt or disable the extension? | | |
-| `permissions.request` user-gesture requirements (popup, options, extension tab) | | |
-| `scripting.registerContentScripts`: `persistAcrossSessions`, `runAt: document_start`, `matchOriginAsFallback`, `world`, limits | | |
-| Do runtime-registered scripts survive extension update and browser restart? | | |
-| `URLPattern` support (Chrome/Firefox versions) | | |
-| Navigation API (`navigation.currententrychange`) from a content script's isolated world | | |
-| `chrome.dom.openOrClosedShadowRoot` availability | | |
-| CWS developer registration fee and current review times | | |
+Source for all rows: Chrome extension docs via Context7. URLs are https://developer.chrome.com/docs/extensions/reference/api/storage, …/api/scripting, …/api/permissions, and …/develop/security-privacy/user-privacy (accessed 2026-11-19).
 
-## 4. WXT findings (T-0.2, to fill)
+| Question | Answer |
+|---|---|
+| `storage.local` quota | **10 MB** (5 MB in Chrome ≤ 113), measured as JSON-stringified values plus key lengths. `unlimitedStorage` removes the limit. Exposed to content scripts by default (`setAccessLevel` can restrict it) |
+| `storage.sync` quotas | **100 KB total (102,400 B), 8 KB per item (8,192 B), 512 items, 120 writes/min, 1,800 writes/hour.** Writes over the limit fail immediately. ⇒ **Settings sync must be debounced and batched (T-3.5)**; never write on every slider move |
+| `storage.session` | 10 MB, in memory only |
+| Adding `optional_host_permissions` in an update | "Optional permissions can also be implemented in an extension update… without disabling the extension." Adding a new site in an update is safe |
+| `permissions.request` | Must be called **inside a user gesture** (e.g. a button click handler). Chrome prompts only if the warnings differ from those already accepted |
+| `registerContentScripts` | `persistAcrossSessions` defaults to **true**. Registration is all-or-nothing: if any id exists or any file is invalid, nothing registers. `updateContentScripts` exists for changes |
+| Do runtime-registered scripts survive an extension update? | **Not stated** in the docs. (User scripts are explicitly cleared on update.) ⇒ Re-sync registrations against granted permissions on `runtime.onInstalled` (all reasons) and `onStartup`. Already in extension-architecture §10; verify empirically in T-2.5 |
+| `browser.*` namespace | Chrome now exposes `browser.*` (docs mark "browser.* since Chrome 148"). WXT's `browser` works either way |
+| `URLPattern`, Navigation API from the isolated world, `chrome.dom.openOrClosedShadowRoot` | Deferred to empirical tests in T-2.2 and T-4.1 |
+| CWS registration fee and review times | Not checked (needed only at M6) |
 
-- Version used and release date:
-- Runtime content-script registration API:
-- Shadow-root UI helper:
-- i18n setup:
-- Testing utilities (fake browser):
-- Firefox build notes:
-- Comparison with Plasmo / CRXJS maintenance status (brief, only if WXT shows problems):
+## 4. WXT findings (T-0.2, done 2026-11-19)
+
+- **Version:** `wxt` 0.21.5 (published 2026-10-26), `@wxt-dev/module-react` 1.2.2, Vite 8.3.8 (pulled in by WXT), React 19.3.1.
+- **Runtime content scripts:** `defineContentScript({ registration: 'runtime', … })` builds the script without adding it to the manifest. Registration is ours to do via `browser.scripting.registerContentScripts` (WXT docs, entrypoints guide). Whether WXT adds `matches` to `host_permissions` is checked by `scripts/check-manifest.mjs`, which fails the build if it does.
+- **Dev builds** add `tabs` and `scripting` for hot reload (WXT manifest docs). Production builds are guarded by `pnpm check:manifest`.
+- **Entrypoints directory:** every file in `src/entrypoints/` is treated as an entrypoint, so a `*.test.ts` there breaks `wxt prepare`. Tests live in `src/**` outside `entrypoints/`.
+- **Testing:** `WxtVitest()` from `wxt/testing/vitest-plugin` plus `fakeBrowser` from `wxt/testing/fake-browser`. The `wxt/testing` barrel was removed in 0.21. In-memory `browser.storage` works (smoke test passes).
+- **Firefox:** `manifestVersion: 3` builds `firefox-mv3`. WXT warns that new Firefox add-ons need `data_collection_permissions`; we declare `{ required: ['none'] }` (D-017). `wxt zip -b firefox` also emits a sources zip for AMO, but it currently contains only `apps/extension`. The AMO source submission must include the workspace packages (follow-up T-10.1).
+- **Toolbar title:** the popup's `<title>` overrides `action.default_title`. It is set from `@reskin/brand` in a `build:manifestGenerated` hook.
+- **E2E:** Playwright 1.65.1 with its bundled Chromium (159) loads the unpacked build via `--load-extension`. Branded Google Chrome is not used for this.
+- **TypeScript:** `typescript@7.0.2` (npm `latest`) exports only a version stub plus `unstable/*` APIs, with no classic compiler API. The workspace pins **TypeScript 6.0.3** (D-022).
+- Plasmo/CRXJS comparison: not needed. WXT works as documented.
 
 ## 5. Injection spike results (T-2.1, to fill)
 
@@ -104,7 +109,7 @@ These counts include bot formatting commits and track popularity as well as brea
 
 | Layer | Choice | Confidence | Notes |
 |---|---|---|---|
-| Extension framework | WXT | Medium. Not re-verified in this session | T-0.2 confirms; switching later is costly, so verify first |
+| Extension framework | WXT 0.21.5 | High | Verified in T-0.2: builds Chrome and Firefox MV3, Vitest and Playwright work |
 | UI | React + TS | Medium | D-007 is Proposed; Vue is equally viable |
 | Content script | Vanilla TS | High | Size and perf budget |
 | CSS parser | css-tree | Medium | T-1.2 checks parse support for the authoring syntax and bundle size |

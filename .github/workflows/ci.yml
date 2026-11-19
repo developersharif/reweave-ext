@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # typecheck + lint + unit tests + Chrome/Firefox builds + manifest guard
+      - run: pnpm check
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @reskin/extension exec playwright install --with-deps chromium
+
+      - name: E2E (fixtures only, never live sites)
+        run: pnpm test:e2e
+
+      - name: Zip extension builds
+        run: pnpm --filter @reskin/extension zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension-zips
+          path: apps/extension/.output/*.zip
+          # WXT writes to `.output/`; upload-artifact skips hidden paths unless told otherwise
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/extension/test-results
+          retention-days: 7

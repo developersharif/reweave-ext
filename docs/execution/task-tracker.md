@@ -13,12 +13,12 @@ Spike tasks (🔬) produce a **written result** in the named doc before dependen
 
 | ID | Task | Size | Deps | Acceptance | Status |
 |---|---|---|---|---|---|
-| T-0.1 | `git init`; pnpm workspace (`apps/*`, `packages/*`); root `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`); lint/format (Biome or ESLint+Prettier — pick one, record in decisions); `.nvmrc`/`engines`; MIT `LICENSE`; root scripts `check`, `test`, `build`, `dev` | M | — | `pnpm install && pnpm check` passes on empty packages | todo |
-| T-0.2 🔬 | Fetch current WXT docs via Context7; scaffold `apps/extension` (WXT + React + TS). Confirm: runtime-registered content scripts, shadow-root UI helper, i18n, `build -b firefox`, testing utilities (fake browser). Record WXT version + findings in `docs/research/technical-research.md` §4 and D-005 | M | T-0.1 | Unpacked build loads in Chrome; popup renders; Firefox zip builds; findings written | todo |
-| T-0.3 🔬 | Targeted Chrome-docs check (no broad research): `storage.local`/`sync` quotas; `optional_host_permissions` update behavior; `permissions.request` gesture rules; `scripting.registerContentScripts` options (`persistAcrossSessions`, `runAt`, `world`); `URLPattern` support; Navigation API availability in content scripts. Write results to technical-research.md §3 with URLs | M | — | Every item answered with a source URL, or marked "test in T-2.x" | todo |
-| T-0.4 | GitHub Actions CI: install (cached), typecheck, lint, test, build Chrome + Firefox, upload zips as artifacts | S | T-0.2 | CI green on main | todo |
-| T-0.5 | `packages/brand`: name, tagline, URLs, colors; wire into WXT `_locales` (`appName`, `appDescription`) | S | T-0.2 | Changing the brand name in one file changes the popup + manifest name | todo |
-| T-0.6 | Skeletons: `packages/schema`, `compiler`, `adapters`, `templates`, `test-fixtures` with Vitest + one smoke test each; path aliases | S | T-0.1 | `pnpm test` runs 5 smoke tests | todo |
+| T-0.1 | `git init`; pnpm workspace (`apps/*`, `packages/*`); root `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`); lint/format (Biome or ESLint+Prettier — pick one, record in decisions); `.nvmrc`/`engines`; MIT `LICENSE`; root scripts `check`, `test`, `build`, `dev` | M | — | `pnpm install && pnpm check` passes on empty packages | done (2026-11-19) |
+| T-0.2 🔬 | Fetch current WXT docs via Context7; scaffold `apps/extension` (WXT + React + TS). Confirm: runtime-registered content scripts, shadow-root UI helper, i18n, `build -b firefox`, testing utilities (fake browser). Record WXT version + findings in `docs/research/technical-research.md` §4 and D-005 | M | T-0.1 | Unpacked build loads in Chrome; popup renders; Firefox zip builds; findings written | done (2026-11-19) |
+| T-0.3 🔬 | Targeted Chrome-docs check (no broad research): `storage.local`/`sync` quotas; `optional_host_permissions` update behavior; `permissions.request` gesture rules; `scripting.registerContentScripts` options (`persistAcrossSessions`, `runAt`, `world`); `URLPattern` support; Navigation API availability in content scripts. Write results to technical-research.md §3 with URLs | M | — | Every item answered with a source URL, or marked "test in T-2.x" | done (2026-11-19) |
+| T-0.4 | GitHub Actions CI: install (cached), typecheck, lint, test, build Chrome + Firefox, upload zips as artifacts | S | T-0.2 | CI green on main | done (2026-11-19) |
+| T-0.5 | `packages/brand`: name, tagline, URLs, colors; wire into WXT `_locales` (`appName`, `appDescription`) | S | T-0.2 | Changing the brand name in one file changes the popup + manifest name | done (2026-11-19) |
+| T-0.6 | Skeletons: `packages/schema`, `compiler`, `adapters`, `templates`, `test-fixtures` with Vitest + one smoke test each; path aliases | S | T-0.1 | `pnpm test` runs 5 smoke tests | done (2026-11-19) |
 
 ## M1 — Engine core
 
@@ -54,7 +54,7 @@ Spike tasks (🔬) produce a **written result** in the named doc before dependen
 | T-3.2 | Palettes: Default Dark/Light + 2 community-style palettes (license verified); palette picker in popup | M | T-1.5, T-2.7 | Palette switch re-themes all 3 templates live | todo |
 | T-3.3 | Probes runtime + `rk:health` + popup badge + "Looks broken?" → prefilled GitHub issue URL (ids, versions, failed probes; user reviews before submitting) | M | T-2.6 | Removing a component from a fixture flips badge; issue URL contains no page URL/content | todo |
 | T-3.4 | Options/library page: per-site assignments, reset settings, uninstall template, export/import library JSON, import template `.zip`, global pause | L | T-2.5 | Export → clear storage → import restores state | todo |
-| T-3.5 | `storage.sync` mirroring for `rk:sites` + `rk:settings:*` with size guards and conflict rule (last-write-wins per key) | M | T-2.5 | Unit tests at quota edges | todo |
+| T-3.5 | `storage.sync` mirroring for `rk:sites` + `rk:settings:*` with size guards (100 KB total, 8 KB/item), **debounced/batched writes** (limits: 120 writes/min, 1,800/h; technical-research §3), and a conflict rule (last-write-wins per key) | M | T-2.5 | Unit tests at quota edges; a slider drag produces ≤ 1 sync write per 5 s | todo |
 | T-3.6 | Welcome page (extension): pick sites → permission → 3 template cards with previews → "Try it" | M | T-3.1 | Install → restyled site in ≤ 4 clicks (e2e) | todo |
 | T-3.7 | Variants in popup | S | T-2.7 | Variant switch applies its settings/tokens | todo |
 
@@ -117,4 +117,8 @@ Spike tasks (🔬) produce a **written result** in the named doc before dependen
 | T-8.5 | (Stretch) Automated before/after screenshots for curated templates | M | T-8.1 | Generated in CI | todo |
 
 ## M9 / M10
-Break down only after Gate B. See `roadmap.md`.
+Break down only after Gate B. See `roadmap.md`. Known items so far:
+
+| ID | Task | Size | Deps | Acceptance | Status |
+|---|---|---|---|---|---|
+| T-10.1 | AMO source submission: configure `zip.sourcesRoot` (or a custom script) so the Firefox sources zip contains the whole workspace, with build instructions | S | — | A reviewer can rebuild an identical Firefox zip from the sources zip | todo |
