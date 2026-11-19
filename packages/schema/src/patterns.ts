@@ -20,6 +20,8 @@ export const EVENT_NAME = /^[a-z][a-z0-9-]{0,63}$/;
 export const HOSTNAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 /** Route path pattern: starts with `/`, `*` is the only wildcard. */
 export const ROUTE_PATH = /^\/[A-Za-z0-9/@*._~%-]*$/;
+/** A site's CSS custom property name, as an adapter theme binding names it. */
+export const CSS_CUSTOM_PROPERTY = /^--[A-Za-z0-9_-]{1,80}$/;
 /** Tags on templates. */
 export const TAG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

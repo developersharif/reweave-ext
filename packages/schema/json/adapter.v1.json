@@ -169,6 +169,46 @@
           "expect"
         ]
       }
+    },
+    "theme": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "follow": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^--[A-Za-z0-9_-]{1,80}$"
+          }
+        },
+        "bind": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^--[A-Za-z0-9_-]{1,80}$"
+            },
+            "minItems": 1,
+            "maxItems": 64
+          }
+        }
+      },
+      "required": [
+        "scope"
+      ]
     }
   },
   "required": [

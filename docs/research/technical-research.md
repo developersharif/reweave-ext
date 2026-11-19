@@ -166,6 +166,22 @@ Adapter selectors are scoped to each page element (`ytd-browse[page-subtype=…]
 - **Fixture parsing:** live DOM built by scripts nests `<button>` in `<button>` and `<a>` in `<a>`, which the HTML parser re-parents. The fixture capture script rewrites the inner ones to `<span>` and verifies that each saved file parses back to the same element tree (packages/test-fixtures/README.md).
 - **happy-dom 21.0.4 disagrees with Chromium:** on the same fixture it gave different element counts and wrong results for `:not()` with a complex selector. Adapter tests therefore run selectors in headless Chromium (Playwright), and CI installs Chromium before `pnpm check`.
 
+### 5.4 YouTube colour variables (input to D-033, 2026-11-19)
+
+**Setup:** live `www.youtube.com`, logged out, en-US, Playwright 1.65.1 with its bundled Chromium 159 (headless). The watch, search, home and channel pages were read with `getComputedStyle(document.documentElement)` in light mode, then again with the `dark` attribute set on `<html>`. The script is `apps/extension/scripts/map-youtube-theme.mjs`.
+
+- **Generated variables do the painting.** YouTube's stylesheets use 165 build-generated custom properties named `--t<16 hex>` in 3,489 declarations. They are defined with literal colours on `:root`, `[dark]` and `[light]`.
+  - The readable names `--yt-sys-color-baseline--*` appear directly in only 120 declarations. They are defined on `[light], html` and `[dark], html[dark]`.
+  - Overriding only the readable names on `<html>` left almost every surface unchanged.
+- **Same names on every page:** the generated names were identical across the page bundles we loaded (they come from the shared `kevlar_base` styles). Whether they survive a YouTube deploy is unknown; T-3.8 tracks it.
+- **Matching:** a generated variable takes a standard role when its (light, dark) colour pair equals the pair of exactly one readable name listed for that role.
+  - Last run: of 165 generated variables, 21 were bound (6 of them only after dropping alpha), 0 were ambiguous, and 144 matched no standard role (greys, overlays and brand colours). The map also binds 12 readable names and 9 inline variables (below): 42 in all.
+  - The masthead uses a translucent base background (`rgba(255,255,255,0.9)` in light, `rgba(15,15,15,0.8)` in dark). Matching it with alpha dropped is what keeps a palette's masthead from staying white.
+- **Inline colours:** the chapter bars in search results get `--yt-lightsource-*` variables inline on `ytd-expandable-metadata-renderer`, picked from the thumbnail. They can't be read from `<html>`, so the map lists them by hand, and the theme scope includes `[style*="--yt-lightsource"]`.
+  - When a test flips `dark` after load, those inline colours stay light. That is YouTube's own behaviour, not the template's.
+- **Grid:** `ytd-rich-grid-renderer` sets `--ytd-rich-grid-items-per-row`, `--ytd-rich-grid-posts-per-row`, `--ytd-rich-grid-item-min-width` and margins inline. A template overrides them with `!important` on the component (Compact YouTube).
+- **Result:** with a test palette bound this way, the whole page recoloured (masthead, guide, chips, cards, chapter bars). With nothing bound, the readable names alone kept YouTube's own light and dark colours. That is the fallback D-033 relies on.
+
 ## 6. Shadow DOM findings (T-4.1, to fill)
 
 - Reddit components in open roots:

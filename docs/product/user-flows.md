@@ -30,6 +30,8 @@ Rule of thumb: **the extension is for the page you're on; the web is for everyth
 
 Acceptance: a new user goes from install to a restyled site in ≤ 4 clicks, with a permission prompt scoped to one site.
 
+Built in M3 (T-3.6, D-037): the welcome page preselects every supported site; one "Allow access" button asks for all selected sites in a single prompt. Then one card per bundled template, with its cover and a "Before and after" disclosure, and "Try it" opens the site with it applied. That makes three clicks plus the prompt. The in-page toast (step 5) is not built: it would add DOM to the page (security-model T8), so the popup is the place to change or undo.
+
 ## 2. Browse & install from the web (M7)
 
 1. `/` → Discover: sections "For YouTube", "For Reddit", "Focus", "Trending this week" (trending = installs, M7).
@@ -63,9 +65,9 @@ Acceptance: a new user goes from install to a restyled site in ≤ 4 clicks, wit
 - **Active-site detection:** popup matches the tab URL against the supported sites. States: *Supported & enabled*, *Supported, permission not granted* ("Enable on youtube.com"), *Not supported* ("We don't support this site yet — vote for it ↗"), *Sensitive route* ("Templates are paused on this page").
   - Without the `tabs` permission, the browser hides the URL of sites we can't access yet. Then the popup lists the supported sites that still need enabling, each with an "Enable" button (D-032).
 - **Toggle** = per-site enable/disable. **Global pause** sits in the popup footer until the options page exists (M3). Changes apply live without reload (style swap).
-- Built in M2 (T-2.7): detection states, toggle, template switch, variant, settings, reset. Later: health status (M3), palette (M3), browse more (M7), "Looks broken?" (M8), Creator mode (M5).
+- Built in M2 (T-2.7): detection states, toggle, template switch, variant, settings, reset. M3: health badge ("Works here" / "May be broken (n parts not found)" / "Colours may not apply"), palette picker ("Colours", shown for token-aware templates), "Looks broken?" link. Later: browse more (M7), Creator mode (M5).
 - **Switch template** lists installed templates for this adapter + "Original site".
-- **Looks broken?** → one-screen form: checkboxes for what's wrong, optional comment, shows exactly what will be sent (template id/version, adapter id/version, failing probe ids, browser version). No URL, no screenshot unless the user attaches one manually.
+- **Looks broken?** M3: opens a new GitHub issue prefilled with template id/version, adapter id/version, parts not found, extension version and browser name; the user describes the problem and submits it on GitHub (D-036). M8: a one-screen form that shows exactly what will be sent. Never a URL, and no screenshot unless the user attaches one manually.
 
 ## 4. Popup on an unsupported site (MVP)
 
@@ -73,8 +75,11 @@ Shows "Not supported yet" + "Request this site" (counts a vote: hostname only, o
 
 ## 5. Library / options page (M3; account sync M9)
 
-- Per site: assigned template, enabled state, settings reset, uninstall.
-- Global: pause all, update channel (stable only in MVP), telemetry opt-in toggles, export/import library as JSON (offline backup, MVP), sign in (M9) for account sync.
+- Per site: access (an "Allow access" button when missing), enabled state, template, variant, colours (palette), settings reset.
+- Templates: every installed template with its authors and sites; "Import template (.zip)"; "Uninstall" for imported ones (bundled ones can't be removed). Sites using an uninstalled template go back to "Original site".
+- Backup: "Export library" saves a JSON file (sites, choices, settings, imported templates; no browsing data); "Import library" asks before replacing the current library.
+- Global: pause all. Later: update channel (stable only in MVP), telemetry opt-in toggles (M8), sign in (M9).
+- Choices and settings also follow the user through their browser's own sync (D-035); site access is granted per browser.
 
 ## 6. Creator mode / Studio (M5)
 

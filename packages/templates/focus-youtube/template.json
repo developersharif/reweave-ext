@@ -3,30 +3,85 @@
   "schemaVersion": 1,
   "id": "reskin/focus-youtube",
   "name": "Focus YouTube",
-  "summary": "Hide Shorts and, if you like, the home feed. Narrower watch page for easier reading.",
-  "version": "0.1.0",
+  "summary": "Fewer distractions: no Shorts, optional no feed, recommendations or comments, and a narrower watch page.",
+  "version": "1.0.0",
   "license": "MIT",
-  "authors": [{ "handle": "reskin" }],
+  "authors": [
+    {
+      "handle": "reskin"
+    }
+  ],
   "category": "focus",
-  "tags": ["focus", "no-shorts", "dev"],
+  "tags": ["focus", "no-shorts", "minimal"],
   "targets": [
     {
       "adapter": "youtube",
-      "adapterRange": "^1.0.0",
+      "adapterRange": "^1.1.0",
       "styles": [
-        { "file": "styles/base.css" },
-        { "file": "styles/watch.css", "routes": ["watch"] }
+        {
+          "file": "styles/base.css"
+        },
+        {
+          "file": "styles/watch.css",
+          "routes": ["watch"]
+        }
       ],
       "hide": [
-        { "component": "shorts-shelf", "when": "hideShorts" },
-        { "component": "shorts-card", "when": "hideShorts" },
-        { "component": "home-feed", "when": "hideHomeFeed", "routes": ["home"] }
+        {
+          "component": "shorts-shelf",
+          "when": "hideShorts"
+        },
+        {
+          "component": "shorts-card",
+          "when": "hideShorts"
+        },
+        {
+          "component": "home-feed",
+          "when": "hideHomeFeed",
+          "routes": ["home"]
+        },
+        {
+          "component": "related-sidebar",
+          "when": "hideRelated",
+          "routes": ["watch"]
+        },
+        {
+          "component": "comments",
+          "when": "hideComments",
+          "routes": ["watch"]
+        }
       ]
     }
   ],
+  "tokens": {
+    "consumes": "standard/v1"
+  },
   "settings": [
-    { "id": "hideShorts", "type": "boolean", "label": "Hide Shorts", "default": true },
-    { "id": "hideHomeFeed", "type": "boolean", "label": "Hide home feed", "default": false },
+    {
+      "id": "hideShorts",
+      "type": "boolean",
+      "label": "Hide Shorts",
+      "default": true
+    },
+    {
+      "id": "hideHomeFeed",
+      "type": "boolean",
+      "label": "Hide home feed",
+      "default": false
+    },
+    {
+      "id": "hideRelated",
+      "type": "boolean",
+      "label": "Hide recommendations",
+      "description": "The list of videos beside the one you're watching.",
+      "default": false
+    },
+    {
+      "id": "hideComments",
+      "type": "boolean",
+      "label": "Hide comments",
+      "default": false
+    },
     {
       "id": "maxWidth",
       "type": "range",
@@ -38,11 +93,32 @@
       "default": 1280
     }
   ],
+  "variants": [
+    {
+      "id": "deep-focus",
+      "label": "Deep focus",
+      "settings": {
+        "hideHomeFeed": true,
+        "hideRelated": true,
+        "hideComments": true
+      }
+    }
+  ],
   "previews": [
     {
-      "file": "previews/cover.png",
-      "alt": "YouTube watch page with a narrower column and no Shorts",
+      "file": "previews/cover.jpg",
+      "alt": "YouTube watch page with a centered column and no recommendations",
       "role": "cover"
+    },
+    {
+      "file": "previews/before.jpg",
+      "alt": "Before: a watch page with recommendations beside the video",
+      "route": "watch"
+    },
+    {
+      "file": "previews/after.jpg",
+      "alt": "After: Deep focus, a centred column without recommendations or comments",
+      "route": "watch"
     }
   ]
 }

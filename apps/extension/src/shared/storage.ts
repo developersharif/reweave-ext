@@ -7,9 +7,15 @@ import {
   type CompiledTemplate,
   compiledKey,
   DEFAULT_PREFS,
+  type Health,
+  healthKey,
+  INSTALLED_KEY,
+  type Installed,
+  InstalledSchema,
   type Prefs,
   PrefsSchema,
   parseCompiled,
+  parseHealth,
   parseStored,
   type Sites,
   SitesSchema,
@@ -53,3 +59,34 @@ export async function getCompiled(adapterId: string): Promise<CompiledTemplate |
 export const setCompiled = (adapterId: string, compiled: CompiledTemplate) =>
   local().set({ [compiledKey(adapterId)]: compiled });
 export const removeCompiled = (adapterId: string) => local().remove(compiledKey(adapterId));
+
+/** Written by the content script (content/probes.ts); read here for the popup. */
+export async function getHealth(adapterId: string): Promise<Health | null> {
+  const value = await read(healthKey(adapterId));
+  return value === undefined ? null : parseHealth(value);
+}
+
+/** Imported template bundles (T-3.4). An invalid value reads as empty rather than throwing. */
+export async function getInstalled(): Promise<Installed> {
+  return parseStored(InstalledSchema, await read(INSTALLED_KEY), {});
+}
+export const setInstalled = (installed: Installed) => local().set({ [INSTALLED_KEY]: installed });
+
+const SETTINGS_PREFIX = settingsKey('');
+
+/** Every template's stored settings, by template id. */
+export async function getAllSettings(): Promise<Record<string, StoredSettings>> {
+  const all = await local().get(null);
+  return Object.fromEntries(
+    Object.entries(all)
+      .filter(([k]) => k.startsWith(SETTINGS_PREFIX))
+      .map(([k, value]) => [
+        k.slice(SETTINGS_PREFIX.length),
+        parseStored(StoredSettingsSchema, value, {}),
+      ]),
+  );
+}
+export async function removeAllSettings(): Promise<void> {
+  const keys = Object.keys(await local().get(null)).filter((k) => k.startsWith(SETTINGS_PREFIX));
+  if (keys.length > 0) await local().remove(keys);
+}

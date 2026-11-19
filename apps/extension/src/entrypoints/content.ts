@@ -13,6 +13,7 @@ export default defineContentScript({
       adapterId: site.adapterId,
       storage: {
         get: (keys) => browser.storage.local.get(keys),
+        set: (items) => browser.storage.local.set(items),
         onChanged: (cb) =>
           browser.storage.onChanged.addListener((changes, area) => {
             if (area === 'local') cb(changes);
@@ -26,6 +27,7 @@ export default defineContentScript({
         return () => clearTimeout(id);
       },
       now: () => performance.now(),
+      date: () => Date.now(),
     });
     void runtime.start();
   },

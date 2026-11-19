@@ -1,0 +1,25 @@
+/* Calm YouTube. Colours are the template's token defaults (or the chosen palette),
+   applied to YouTube through the adapter's theme map. */
+:--masthead {
+  box-shadow: none;
+}
+
+/* Muted thumbnails until you hover (the whole card is filtered; the text is
+   near-neutral, so it barely changes). */
+:--video-card,
+:--shorts-card {
+  filter: saturate(setting(thumbnailColor));
+  transition: filter token(motion-duration) ease;
+}
+
+:--video-card:hover,
+:--shorts-card:hover {
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :--video-card,
+  :--shorts-card {
+    transition: none;
+  }
+}

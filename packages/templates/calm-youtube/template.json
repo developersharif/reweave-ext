@@ -1,0 +1,90 @@
+{
+  "$schema": "../../schema/json/template.v1.json",
+  "schemaVersion": 1,
+  "id": "reskin/calm-youtube",
+  "name": "Calm YouTube",
+  "summary": "Soft, warm colours, muted thumbnails until you hover, and less clutter.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": [{ "handle": "reskin" }],
+  "category": "aesthetic",
+  "tags": ["calm", "warm", "muted"],
+  "targets": [
+    {
+      "adapter": "youtube",
+      "adapterRange": "^1.1.0",
+      "styles": [{ "file": "styles/base.css" }],
+      "hide": [
+        { "component": "shorts-shelf", "when": "hideShorts" },
+        { "component": "shorts-card", "when": "hideShorts" },
+        { "component": "chip-bar", "when": "hideChips" },
+        { "component": "comments", "when": "hideComments", "routes": ["watch"] }
+      ]
+    }
+  ],
+  "tokens": {
+    "consumes": "standard/v1",
+    "defaults": {
+      "color.bg": "#1b1a1f",
+      "color.surface": "#24222a",
+      "color.surface-2": "#2e2b35",
+      "color.text": "#ebe5dc",
+      "color.text-muted": "#aaa297",
+      "color.accent": "#d6a77a",
+      "color.accent-text": "#1b1a1f",
+      "color.border": "#38343f",
+      "color.link": "#dcb791",
+      "color.danger": "#e08383",
+      "color.success": "#a3c48f",
+      "motion.duration": "300ms"
+    }
+  },
+  "settings": [
+    {
+      "id": "thumbnailColor",
+      "type": "range",
+      "label": "Thumbnail colour",
+      "description": "How much colour thumbnails keep until you hover.",
+      "min": 30,
+      "max": 100,
+      "step": 10,
+      "unit": "%",
+      "default": 60
+    },
+    { "id": "hideShorts", "type": "boolean", "label": "Hide Shorts", "default": true },
+    { "id": "hideChips", "type": "boolean", "label": "Hide topic chips", "default": true },
+    { "id": "hideComments", "type": "boolean", "label": "Hide comments", "default": false }
+  ],
+  "variants": [
+    {
+      "id": "day",
+      "label": "Day",
+      "tokens": {
+        "color.bg": "#f6f1e9",
+        "color.surface": "#fffaf3",
+        "color.surface-2": "#ebe3d6",
+        "color.text": "#2b2722",
+        "color.text-muted": "#6c645a",
+        "color.accent": "#9c5f37",
+        "color.accent-text": "#fffaf3",
+        "color.border": "#ddd2c3",
+        "color.link": "#87512d",
+        "color.danger": "#b1413d",
+        "color.success": "#4d7a3b"
+      }
+    }
+  ],
+  "previews": [
+    {
+      "file": "previews/cover.jpg",
+      "alt": "YouTube search results in soft warm colours",
+      "role": "cover"
+    },
+    { "file": "previews/before.jpg", "alt": "Before: YouTube's search results", "route": "search" },
+    {
+      "file": "previews/after.jpg",
+      "alt": "After: warm colours and muted thumbnails",
+      "route": "search"
+    }
+  ]
+}

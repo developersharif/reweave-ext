@@ -1,0 +1,56 @@
+{
+  "$schema": "../../schema/json/palette.v1.json",
+  "schemaVersion": 1,
+  "id": "reskin/nord",
+  "name": "Nord",
+  "version": "1.0.0",
+  "license": "MIT",
+  "tokens": {
+    "color": {
+      "bg": {
+        "$type": "color",
+        "$value": "#2e3440"
+      },
+      "surface": {
+        "$type": "color",
+        "$value": "#3b4252"
+      },
+      "surface-2": {
+        "$type": "color",
+        "$value": "#434c5e"
+      },
+      "text": {
+        "$type": "color",
+        "$value": "#eceff4"
+      },
+      "text-muted": {
+        "$type": "color",
+        "$value": "#d8dee9"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#88c0d0"
+      },
+      "accent-text": {
+        "$type": "color",
+        "$value": "#2e3440"
+      },
+      "border": {
+        "$type": "color",
+        "$value": "#4c566a"
+      },
+      "link": {
+        "$type": "color",
+        "$value": "#81a1c1"
+      },
+      "danger": {
+        "$type": "color",
+        "$value": "#bf616a"
+      },
+      "success": {
+        "$type": "color",
+        "$value": "#a3be8c"
+      }
+    }
+  }
+}

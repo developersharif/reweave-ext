@@ -1,6 +1,6 @@
 /** Parses and checks adapter component selectors once per adapter object. */
 import { type Adapter, CODES, type Diagnostic, diag } from '@reskin/schema';
-import { type CssNode, clone, parse, type SelectorList, walk } from '../css/csstree.ts';
+import { type CssNode, clone, generate, parse, type SelectorList, walk } from '../css/csstree.ts';
 
 export interface ParsedComponent {
   id: string;
@@ -12,6 +12,8 @@ export interface ParsedComponent {
 
 export interface ParsedAdapter {
   components: ReadonlyMap<string, ParsedComponent>;
+  /** The theme scope selector, re-serialized after parsing (absent if the adapter has no theme or it failed to parse). */
+  themeScope?: string;
   diagnostics: Diagnostic[];
 }
 
@@ -63,9 +65,43 @@ export function parseAdapter(adapter: Adapter): ParsedAdapter {
     });
     if (!failed) components.set(id, { id, selector, protected: c.protected === true, keys });
   }
-  const parsed = { components, diagnostics };
+  const parsed: ParsedAdapter = { components, diagnostics };
+  if (adapter.theme) {
+    const scope = parseScope(adapter.theme.scope, diagnostics);
+    if (scope) parsed.themeScope = scope;
+  }
   cache.set(adapter, parsed);
   return parsed;
+}
+
+/** Parses the theme scope as a plain selector list (no `:--components`, nothing unparsed). */
+function parseScope(text: string, diagnostics: Diagnostic[]): string | null {
+  const path = 'theme.scope';
+  let failed = false;
+  const fail = (message: string) => {
+    if (!failed)
+      diagnostics.push(diag(CODES.CSS_PARSE_ERROR, 'error', `Theme scope: ${message}`, { path }));
+    failed = true;
+  };
+  let selector: CssNode;
+  try {
+    selector = parse(text, { context: 'selectorList', onParseError: (e) => fail(e.message) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : 'unparsable');
+    return null;
+  }
+  walk(selector, (n) => {
+    if (n.type === 'Raw' || (n.type === 'PseudoClassSelector' && n.name.startsWith('--'))) {
+      if (!failed)
+        diagnostics.push(
+          diag(CODES.DIALECT_BAD_ARGUMENT, 'error', 'Theme scope must be a plain selector list', {
+            path,
+          }),
+        );
+      failed = true;
+    }
+  });
+  return failed ? null : generate(selector);
 }
 
 /** A fresh copy of a component's selector list, safe to splice into another AST. */

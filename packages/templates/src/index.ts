@@ -7,6 +7,10 @@
  * and its tests. Node tools read the template directories with node:fs instead.
  */
 
+import calmYoutubeBase from '../calm-youtube/styles/base.css?raw';
+import calmYoutubeManifest from '../calm-youtube/template.json' with { type: 'json' };
+import compactYoutubeBase from '../compact-youtube/styles/base.css?raw';
+import compactYoutubeManifest from '../compact-youtube/template.json' with { type: 'json' };
 import focusYoutubeBase from '../focus-youtube/styles/base.css?raw';
 import focusYoutubeWatch from '../focus-youtube/styles/watch.css?raw';
 import focusYoutubeManifest from '../focus-youtube/template.json' with { type: 'json' };
@@ -25,10 +29,17 @@ export interface BundledTemplate {
 export const BUNDLED_TEMPLATES: Readonly<Record<string, BundledTemplate>> = {
   'reskin/focus-youtube': {
     manifest: focusYoutubeManifest,
-    sources: {
-      'styles/base.css': focusYoutubeBase,
-      'styles/watch.css': focusYoutubeWatch,
-    },
+    sources: { 'styles/base.css': focusYoutubeBase, 'styles/watch.css': focusYoutubeWatch },
+    assets: {},
+  },
+  'reskin/compact-youtube': {
+    manifest: compactYoutubeManifest,
+    sources: { 'styles/base.css': compactYoutubeBase },
+    assets: {},
+  },
+  'reskin/calm-youtube': {
+    manifest: calmYoutubeManifest,
+    sources: { 'styles/base.css': calmYoutubeBase },
     assets: {},
   },
 };
@@ -36,4 +47,6 @@ export const BUNDLED_TEMPLATES: Readonly<Record<string, BundledTemplate>> = {
 /** Template directories in this package, for Node tools and tests. */
 export const TEMPLATE_DIRS: Readonly<Record<string, string>> = {
   'reskin/focus-youtube': 'focus-youtube',
+  'reskin/compact-youtube': 'compact-youtube',
+  'reskin/calm-youtube': 'calm-youtube',
 };

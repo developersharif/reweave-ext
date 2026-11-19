@@ -3,13 +3,20 @@
  * Same code runs in CI, on the server and in the extension (template-schema §12).
  */
 import * as v from 'valibot';
-import { type Adapter, AdapterSchema } from './adapter.ts';
+import { type Adapter, AdapterSchema, type AdapterTheme } from './adapter.ts';
 import { CODES, type Diagnostic, diag, hasErrors } from './diagnostics.ts';
 import { flattenTokenTree, type Palette, PaletteSchema } from './palette.ts';
 import { OFFICIAL_WORDS } from './patterns.ts';
 import { satisfies } from './semver.ts';
 import { type Setting, type TemplateManifest, TemplateSchema } from './template.ts';
-import { isSafeColor, isTokenName, normalizeFontFamily, tokenValueToCss } from './tokens.ts';
+import {
+  CSS_PREFIX,
+  isSafeColor,
+  isTokenName,
+  normalizeFontFamily,
+  TOKEN_CONTRACT,
+  tokenValueToCss,
+} from './tokens.ts';
 
 export interface ValidationResult<T> {
   ok: boolean;
@@ -392,8 +399,43 @@ export function validateAdapter(input: unknown): ValidationResult<Adapter> {
         path: 'routes',
       }),
     );
+  if (a.theme) d.push(...themeDiagnostics(a.theme));
 
   return { ok: !hasErrors(d), value: a, diagnostics: d };
+}
+
+/** Theme bindings name standard tokens; each site variable is bound once; `--rk-` is ours. */
+function themeDiagnostics(theme: AdapterTheme): Diagnostic[] {
+  const d: Diagnostic[] = [];
+  const reserved = `--${CSS_PREFIX}-`;
+  const boundBy = new Map<string, string>();
+  const check = (kind: 'follow' | 'bind', token: string, vars: readonly string[]) => {
+    const path = `theme.${kind}.${token}`;
+    if (!isTokenName(token))
+      d.push(
+        diag(CODES.TOKEN_UNKNOWN, 'error', `"${token}" is not a ${TOKEN_CONTRACT} token`, { path }),
+      );
+    vars.forEach((name, i) => {
+      if (name.startsWith(reserved))
+        d.push(
+          diag(CODES.CSS_RESERVED_NAME, 'error', `${reserved}* variables are reserved`, {
+            path: kind === 'bind' ? `${path}.${i}` : path,
+          }),
+        );
+      if (kind !== 'bind') return;
+      const other = boundBy.get(name);
+      if (other)
+        d.push(
+          diag(CODES.DUPLICATE_ID, 'error', `${name} is already bound to ${other}`, {
+            path: `${path}.${i}`,
+          }),
+        );
+      else boundBy.set(name, token);
+    });
+  };
+  for (const [token, name] of Object.entries(theme.follow ?? {})) check('follow', token, [name]);
+  for (const [token, names] of Object.entries(theme.bind ?? {})) check('bind', token, names);
+  return d;
 }
 
 export function validatePalette(input: unknown): ValidationResult<Palette> {

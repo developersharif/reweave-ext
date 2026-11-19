@@ -1,0 +1,209 @@
+{
+  "engineVersion": "1.0.0",
+  "templateId": "reskin/calm-youtube",
+  "templateVersion": "1.0.0",
+  "adapterId": "youtube",
+  "adapterVersion": "1.1.0",
+  "groups": [
+    {
+      "routes": [
+        "channel",
+        "home",
+        "playlist",
+        "search",
+        "shorts",
+        "subscriptions",
+        "watch"
+      ],
+      "css": ":root{--rk-color-bg:#1b1a1f;--rk-color-surface:#24222a;--rk-color-surface-2:#2e2b35;--rk-color-text:#ebe5dc;--rk-color-text-muted:#aaa297;--rk-color-accent:#d6a77a;--rk-color-accent-text:#1b1a1f;--rk-color-border:#38343f;--rk-color-link:#dcb791;--rk-color-danger:#e08383;--rk-color-success:#a3c48f;--rk-font-body:system-ui, sans-serif;--rk-font-heading:system-ui, sans-serif;--rk-font-mono:ui-monospace, monospace;--rk-font-scale:1;--rk-radius-sm:4px;--rk-radius-md:8px;--rk-radius-lg:16px;--rk-space-scale:1;--rk-motion-duration:300ms;--rk-s-thumbnail-color:60%}:root,[dark],[light],[style*=\"--yt-lightsource\"]{--t25a42c37f53e50e0:var(--rk-color-bg)!important;--t3e41d7b17b187f69:var(--rk-color-bg)!important;--t5355e7dcd3a33a2f:var(--rk-color-bg)!important;--t5978da8d584b8fe9:var(--rk-color-bg)!important;--ta889dfda9605a358:var(--rk-color-bg)!important;--tc54fd20dab7048eb:var(--rk-color-bg)!important;--tf8fd38cbdab81862:var(--rk-color-bg)!important;--yt-sys-color-baseline--base-background:var(--rk-color-bg)!important;--yt-sys-color-baseline--text-primary-inverse:var(--rk-color-bg)!important;--t08a7c6c176cbc5c2:var(--rk-color-surface)!important;--t518e925f61bdcb91:var(--rk-color-surface)!important;--yt-sys-color-baseline--menu-background:var(--rk-color-surface)!important;--yt-sys-color-baseline--raised-background:var(--rk-color-surface)!important;--t7c4965c11f8537c0:var(--rk-color-surface-2)!important;--t7f4f2c6d54836ce0:var(--rk-color-surface-2)!important;--yt-lightsource-section1-color:var(--rk-color-surface-2)!important;--yt-lightsource-section2-color:var(--rk-color-surface-2)!important;--yt-lightsource-section3-color:var(--rk-color-surface-2)!important;--yt-lightsource-section4-color:var(--rk-color-surface-2)!important;--yt-sys-color-baseline--additive-background:var(--rk-color-surface-2)!important;--t1405e70a39276293:var(--rk-color-text)!important;--tffc2fd3a644f6275:var(--rk-color-text)!important;--yt-lightsource-icon-activated-color:var(--rk-color-text)!important;--yt-lightsource-primary-title-color:var(--rk-color-text)!important;--yt-sys-color-baseline--inverted-background:var(--rk-color-text)!important;--yt-sys-color-baseline--text-primary:var(--rk-color-text)!important;--t4a6da19e16bf221a:var(--rk-color-text-muted)!important;--t7e34d5baa4ea6277:var(--rk-color-text-muted)!important;--yt-lightsource-icon-disabled-color:var(--rk-color-text-muted)!important;--yt-lightsource-icon-inactive-color:var(--rk-color-text-muted)!important;--yt-lightsource-secondary-title-color:var(--rk-color-text-muted)!important;--yt-sys-color-baseline--text-disabled:var(--rk-color-text-muted)!important;--yt-sys-color-baseline--text-secondary:var(--rk-color-text-muted)!important;--t2d807bb79e75606d:var(--rk-color-accent)!important;--yt-sys-color-baseline--call-to-action:var(--rk-color-accent)!important;--t20480717de80f555:var(--rk-color-border)!important;--t416e5931fc464589:var(--rk-color-border)!important;--yt-sys-color-baseline--outline:var(--rk-color-border)!important;--t8533f30445e4a126:var(--rk-color-danger)!important;--t854c79338d8ca8a7:var(--rk-color-danger)!important;--td545df04e2c659d7:var(--rk-color-danger)!important;--yt-sys-color-baseline--error-indicator:var(--rk-color-danger)!important}:is(ytd-masthead){box-shadow:none}:is(ytd-rich-item-renderer,ytd-video-renderer,yt-lockup-view-model:not(ytd-rich-item-renderer *)),:is(ytm-shorts-lockup-view-model-v2){filter:saturate(var(--rk-s-thumbnail-color));transition:filter var(--rk-motion-duration) ease}:is(ytd-rich-item-renderer,ytd-video-renderer,yt-lockup-view-model:not(ytd-rich-item-renderer *)):hover,:is(ytm-shorts-lockup-view-model-v2):hover{filter:none}@media (prefers-reduced-motion: reduce){:is(ytd-rich-item-renderer,ytd-video-renderer,yt-lockup-view-model:not(ytd-rich-item-renderer *)),:is(ytm-shorts-lockup-view-model-v2){transition:none}}ytd-rich-shelf-renderer[is-shorts],ytd-reel-shelf-renderer,grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2){display:none!important}ytm-shorts-lockup-view-model-v2{display:none!important}yt-chip-cloud-renderer,chip-bar-view-model{display:none!important}"
+    }
+  ],
+  "sensitiveRoutes": [
+    "account"
+  ],
+  "routeTable": {
+    "home": [
+      "/"
+    ],
+    "watch": [
+      "/watch"
+    ],
+    "shorts": [
+      "/shorts/*"
+    ],
+    "search": [
+      "/results"
+    ],
+    "subscriptions": [
+      "/feed/subscriptions"
+    ],
+    "playlist": [
+      "/playlist"
+    ],
+    "channel": [
+      "/@*",
+      "/channel/*",
+      "/c/*",
+      "/user/*"
+    ],
+    "account": [
+      "/account*",
+      "/paid_memberships*",
+      "/purchases*",
+      "/premium*"
+    ]
+  },
+  "rawSelectors": false,
+  "components": [
+    "chip-bar",
+    "comments",
+    "masthead",
+    "shorts-card",
+    "shorts-shelf",
+    "video-card"
+  ],
+  "assets": [],
+  "navigationEvents": [
+    "yt-navigate-finish"
+  ],
+  "protectedSelectors": [
+    "ytd-consent-bump-v2-lightbox"
+  ],
+  "probes": [
+    {
+      "component": "masthead",
+      "route": "home",
+      "expect": "present",
+      "selector": "ytd-masthead"
+    },
+    {
+      "component": "home-feed",
+      "route": "home",
+      "expect": "present",
+      "selector": "ytd-browse[page-subtype='home'] ytd-rich-grid-renderer"
+    },
+    {
+      "component": "watch-page",
+      "route": "watch",
+      "expect": "present",
+      "selector": "ytd-watch-flexy"
+    },
+    {
+      "component": "primary-column",
+      "route": "watch",
+      "expect": "present",
+      "selector": "ytd-watch-flexy #primary"
+    },
+    {
+      "component": "video-title",
+      "route": "watch",
+      "expect": "present",
+      "selector": "ytd-watch-metadata h1"
+    },
+    {
+      "component": "related-sidebar",
+      "route": "watch",
+      "expect": "present",
+      "selector": "ytd-watch-flexy #secondary"
+    },
+    {
+      "component": "search-results",
+      "route": "search",
+      "expect": "present",
+      "selector": "ytd-search ytd-section-list-renderer"
+    },
+    {
+      "component": "video-card",
+      "route": "search",
+      "expect": "present",
+      "selector": "ytd-rich-item-renderer, ytd-video-renderer, yt-lockup-view-model:not(ytd-rich-item-renderer *)"
+    },
+    {
+      "component": "shorts-player",
+      "route": "shorts",
+      "expect": "present",
+      "selector": "ytd-shorts ytd-reel-video-renderer"
+    },
+    {
+      "component": "channel-header",
+      "route": "channel",
+      "expect": "present",
+      "selector": "ytd-browse[page-subtype='channels'] #page-header"
+    },
+    {
+      "component": "playlist-header",
+      "route": "playlist",
+      "expect": "present",
+      "selector": "ytd-browse[page-subtype='playlist'] #page-header"
+    },
+    {
+      "component": "subscriptions-page",
+      "route": "subscriptions",
+      "expect": "present",
+      "selector": "ytd-browse[page-subtype='subscriptions']"
+    },
+    {
+      "component": "chip-bar",
+      "route": "search",
+      "expect": "present",
+      "selector": "yt-chip-cloud-renderer, chip-bar-view-model"
+    },
+    {
+      "component": "comments",
+      "route": "watch",
+      "expect": "present",
+      "selector": "ytd-watch-flexy ytd-comments#comments"
+    },
+    {
+      "component": "video-grid",
+      "route": "home",
+      "expect": "present",
+      "selector": "ytd-rich-grid-renderer"
+    }
+  ],
+  "themeVars": [
+    "--t25a42c37f53e50e0",
+    "--t3e41d7b17b187f69",
+    "--t5355e7dcd3a33a2f",
+    "--t5978da8d584b8fe9",
+    "--ta889dfda9605a358",
+    "--tc54fd20dab7048eb",
+    "--tf8fd38cbdab81862",
+    "--yt-sys-color-baseline--base-background",
+    "--yt-sys-color-baseline--text-primary-inverse",
+    "--t08a7c6c176cbc5c2",
+    "--t518e925f61bdcb91",
+    "--yt-sys-color-baseline--menu-background",
+    "--yt-sys-color-baseline--raised-background",
+    "--t7c4965c11f8537c0",
+    "--t7f4f2c6d54836ce0",
+    "--yt-lightsource-section1-color",
+    "--yt-lightsource-section2-color",
+    "--yt-lightsource-section3-color",
+    "--yt-lightsource-section4-color",
+    "--yt-sys-color-baseline--additive-background",
+    "--t1405e70a39276293",
+    "--tffc2fd3a644f6275",
+    "--yt-lightsource-icon-activated-color",
+    "--yt-lightsource-primary-title-color",
+    "--yt-sys-color-baseline--inverted-background",
+    "--yt-sys-color-baseline--text-primary",
+    "--t4a6da19e16bf221a",
+    "--t7e34d5baa4ea6277",
+    "--yt-lightsource-icon-disabled-color",
+    "--yt-lightsource-icon-inactive-color",
+    "--yt-lightsource-secondary-title-color",
+    "--yt-sys-color-baseline--text-disabled",
+    "--yt-sys-color-baseline--text-secondary",
+    "--t2d807bb79e75606d",
+    "--yt-sys-color-baseline--call-to-action",
+    "--t20480717de80f555",
+    "--t416e5931fc464589",
+    "--yt-sys-color-baseline--outline",
+    "--t8533f30445e4a126",
+    "--t854c79338d8ca8a7",
+    "--td545df04e2c659d7",
+    "--yt-sys-color-baseline--error-indicator"
+  ],
+  "hash": "1d549958b8ab08"
+}

@@ -61,6 +61,14 @@ Critical path to a public beta: **M0 → M1 → M2 → M3 → M6** (YouTube-only
 - **Acceptance:** a new user reaches a restyled YouTube in ≤ 4 clicks from install; switching palette re-themes any token-aware template; removing a component from a fixture flips the popup badge to "May be broken"; library export → wipe → import restores everything.
 - **Testing:** e2e for onboarding, switching, palette; unit for sync size guards; manual design QA in light/dark.
 - **Risks:** template quality (we are the first creators — design time is real work, budget it).
+- **Outcome (2026-11-19):** all seven tasks done on branch `m3-templates`.
+  - Templates: Focus, Compact and Calm YouTube, with blurred previews captured from live YouTube.
+  - Palettes: Default Dark/Light, Catppuccin Mocha and Nord, recolouring the site through the adapter theme map (D-033).
+  - On-device health with a popup badge and a "Looks broken?" issue link (D-036).
+  - Library page: assignments, `.zip` import, uninstall, export/import, pause (D-034).
+  - `storage.sync` mirroring of choices (D-035), and a welcome page that opens on install (D-037).
+  - Tests: unit tests for sync quota edges, zip safety and library round trips; e2e for onboarding, palettes and variants, health, library and popup. A live check (headless, logged out) reported "Works here" for all three templates on home, watch and search.
+  - Manual: design QA in dark mode was done from screenshots. The founder should still try the permission prompt from the welcome page, which automation can't click (D-029).
 
 ## M4 — Reddit + X adapters, shadow DOM (≈7–10 days, can run parallel to M5)
 

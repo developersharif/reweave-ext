@@ -7,7 +7,8 @@
  *
  * With --profile the browser opens headed on a persistent profile: sign in to YouTube
  * there once, close the window, and re-run to check the logged-in pages. Nothing is
- * recorded except match counts printed to the terminal.
+ * recorded except match counts printed to the terminal. Also checks that every site
+ * variable in the adapter's theme map still exists (if not, re-run map-youtube-theme.mjs).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -69,6 +70,15 @@ for (const [route, url] of Object.entries(PAGES)) {
     expected.map(([id, c]) => [id, c.selector]),
   );
   const missing = counts.filter(([, n]) => n === 0).map(([id]) => id);
+  // Theme map (D-033): every bound site variable should still be defined.
+  const themeVars = Object.values(adapter.theme?.bind ?? {}).flat();
+  const undefinedVars = await page.evaluate(
+    (vars) =>
+      vars.filter((v) => !getComputedStyle(document.documentElement).getPropertyValue(v).trim()),
+    themeVars,
+  );
+  if (undefinedVars.length)
+    missing.push(`theme: ${undefinedVars.length}/${themeVars.length} variables gone`);
   problems += missing.length;
   console.log(
     `${route.padEnd(14)} ${new URL(page.url()).pathname.padEnd(22)} ${expected.length - missing.length}/${expected.length} components` +

@@ -1,4 +1,5 @@
-/* Focus YouTube: quieter chrome on every page. */
+/* Focus YouTube: quieter chrome on every page. Colours come from the palette (or
+   YouTube's own theme) through the adapter's theme map, never painted here. */
 :--masthead {
   box-shadow: none;
 }

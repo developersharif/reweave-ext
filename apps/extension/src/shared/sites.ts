@@ -10,6 +10,10 @@ export interface SiteInfo {
   hosts: readonly string[];
   /** Match patterns for `optional_host_permissions` and content-script registration. */
   origins: readonly string[];
+  /** Applied the first time the site is enabled (falls back to the first installed template). */
+  defaultTemplateId?: string;
+  /** Opened by the welcome page's "Try it". */
+  homeUrl: string;
 }
 
 export const SITES: readonly SiteInfo[] = [
@@ -18,6 +22,8 @@ export const SITES: readonly SiteInfo[] = [
     name: 'YouTube',
     hosts: ['www.youtube.com'],
     origins: ['https://www.youtube.com/*'],
+    defaultTemplateId: 'reskin/focus-youtube',
+    homeUrl: 'https://www.youtube.com/',
   },
 ];
 

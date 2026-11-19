@@ -87,5 +87,20 @@
   "protectedSelectors": [
     "ytd-consent-bump-v2-lightbox"
   ],
-  "hash": "00394a87656a24"
+  "probes": [
+    {
+      "component": "masthead",
+      "route": "home",
+      "expect": "present",
+      "selector": "ytd-masthead"
+    },
+    {
+      "component": "primary-column",
+      "route": "watch",
+      "expect": "present",
+      "selector": "#primary.ytd-watch-flexy"
+    }
+  ],
+  "themeVars": [],
+  "hash": "025b0182a0b05b"
 }

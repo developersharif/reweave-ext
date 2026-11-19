@@ -15,13 +15,20 @@ import {
   satisfies,
   type Target,
   type TemplateManifest,
+  TOKEN_CONTRACT,
 } from '@reskin/schema';
 import { generate, tokenize, tokenTypes } from './css/csstree.ts';
 import { componentSelector, parseAdapter } from './dialect/adapter-selectors.ts';
 import { resolveDialect } from './dialect/resolve.ts';
 import { LIMITS } from './sanitize/allowlist.ts';
 import { sanitizeCss } from './sanitize/sanitize.ts';
-import { resolveSettingValues, resolveTokens, rootDeclarations, type TokenMap } from './values.ts';
+import {
+  resolveSettingValues,
+  resolveTokens,
+  rootDeclarations,
+  type TokenMap,
+  themeDeclarations,
+} from './values.ts';
 
 /** Version of the dialect + runtime contract, checked against `requires.engine`. */
 export const ENGINE_VERSION = '1.0.0';
@@ -205,6 +212,13 @@ export function compileTemplate(input: CompileInput): CompileResult {
     return created;
   };
   group(baseRoutes).css.push(rootDeclarations(tv.css, settings, sv.values));
+  let themeVars: string[] = [];
+  if (adapter.theme && parsed.themeScope && manifest.tokens?.consumes === TOKEN_CONTRACT) {
+    const theme = themeDeclarations(adapter.theme, tv.css, tv.set);
+    if (theme.decls.length > 0)
+      group(baseRoutes).css.push(`${parsed.themeScope}{${theme.decls.join(';')}}`);
+    themeVars = theme.written;
+  }
 
   const assets = Object.fromEntries(
     (manifest.assets ?? []).map((a) => [a.id, input.assets?.[a.id] ?? '']),
@@ -368,6 +382,11 @@ export function compileTemplate(input: CompileInput): CompileResult {
       .flatMap((id) =>
         adapter.components[id]?.protected ? [adapter.components[id].selector] : [],
       ),
+    probes: (adapter.probes ?? []).flatMap((p) => {
+      const selector = adapter.components[p.component]?.selector;
+      return selector && baseSet.has(p.route) ? [{ ...p, selector }] : [];
+    }),
+    themeVars,
   };
   return { ok: true, diagnostics: d, output: { ...body, hash: hashString(JSON.stringify(body)) } };
 }

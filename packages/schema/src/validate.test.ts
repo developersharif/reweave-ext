@@ -243,6 +243,16 @@ describe('validateAdapter', () => {
     expect(r.diagnostics).toEqual([]);
   });
 
+  it('accepts a theme block', () => {
+    const a = clone(youtube) as Json;
+    a.theme = {
+      scope: ':root, [dark]',
+      follow: { 'color.bg': '--site-bg', 'color.link': '--site-accent' },
+      bind: { 'color.bg': ['--site-bg', '--t3e41d7b17b187f69'], 'color.accent': ['--site-accent'] },
+    };
+    expect(validateAdapter(a).diagnostics).toEqual([]);
+  });
+
   it.each<[string, (a: Json) => void, string, string]>([
     ['bad host', (a) => (a.hosts = ['https://www.youtube.com']), 'MANIFEST_INVALID', 'hosts.0'],
     [
@@ -268,6 +278,40 @@ describe('validateAdapter', () => {
       (a) => (a.routes = { account: { path: '/account', sensitive: true } }),
       'MANIFEST_INVALID',
       'routes',
+    ],
+    [
+      'theme token outside standard/v1',
+      (a) => (a.theme = { scope: ':root', follow: { 'color.sparkle': '--site-bg' } }),
+      'TOKEN_UNKNOWN',
+      'theme.follow.color.sparkle',
+    ],
+    [
+      'theme variable that is not a custom property',
+      (a) => (a.theme = { scope: ':root', bind: { 'color.bg': ['background'] } }),
+      'MANIFEST_INVALID',
+      'theme.bind.color.bg.0',
+    ],
+    [
+      'theme variable that breaks out of its declaration',
+      (a) => (a.theme = { scope: ':root', bind: { 'color.bg': ['--x;color:red'] } }),
+      'MANIFEST_INVALID',
+      'theme.bind.color.bg.0',
+    ],
+    [
+      'theme binding a reserved variable',
+      (a) => (a.theme = { scope: ':root', bind: { 'color.bg': ['--rk-color-text'] } }),
+      'CSS_RESERVED_NAME',
+      'theme.bind.color.bg.0',
+    ],
+    [
+      'site variable bound to two tokens',
+      (a) =>
+        (a.theme = {
+          scope: ':root',
+          bind: { 'color.bg': ['--site-bg'], 'color.surface': ['--site-raised', '--site-bg'] },
+        }),
+      'DUPLICATE_ID',
+      'theme.bind.color.surface.1',
     ],
   ])('%s → %s', (_name, mutate, code, path) => {
     const a = clone(youtube) as Json;

@@ -1,0 +1,56 @@
+{
+  "$schema": "../../schema/json/palette.v1.json",
+  "schemaVersion": 1,
+  "id": "reskin/catppuccin-mocha",
+  "name": "Catppuccin Mocha",
+  "version": "1.0.0",
+  "license": "MIT",
+  "tokens": {
+    "color": {
+      "bg": {
+        "$type": "color",
+        "$value": "#1e1e2e"
+      },
+      "surface": {
+        "$type": "color",
+        "$value": "#313244"
+      },
+      "surface-2": {
+        "$type": "color",
+        "$value": "#45475a"
+      },
+      "text": {
+        "$type": "color",
+        "$value": "#cdd6f4"
+      },
+      "text-muted": {
+        "$type": "color",
+        "$value": "#a6adc8"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#cba6f7"
+      },
+      "accent-text": {
+        "$type": "color",
+        "$value": "#11111b"
+      },
+      "border": {
+        "$type": "color",
+        "$value": "#45475a"
+      },
+      "link": {
+        "$type": "color",
+        "$value": "#89b4fa"
+      },
+      "danger": {
+        "$type": "color",
+        "$value": "#f38ba8"
+      },
+      "success": {
+        "$type": "color",
+        "$value": "#a6e3a1"
+      }
+    }
+  }
+}

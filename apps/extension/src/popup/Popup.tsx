@@ -1,8 +1,17 @@
 import { BRAND } from '@reskin/brand';
-import type { Request, SettingValue } from '@reskin/schema';
+import type { SettingValue } from '@reskin/schema';
 import { useCallback, useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { type AppState, RequestError, type SiteView, send } from '../shared/messages';
+import {
+  type AppState,
+  type PaletteSummary,
+  RequestError,
+  type SiteView,
+  type StateRequest,
+  send,
+  type TemplateHealth,
+} from '../shared/messages';
+import { issueUrl } from './report';
 import { SettingControl } from './SettingControl';
 import { popupView } from './view';
 
@@ -16,7 +25,7 @@ export function Popup({ tabUrl, version }: Props) {
   const [state, setState] = useState<AppState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(async (request: Request) => {
+  const run = useCallback(async (request: StateRequest) => {
     try {
       setState(await send(request));
       setError(null);
@@ -67,6 +76,7 @@ export function Popup({ tabUrl, version }: Props) {
           site={view.site}
           host={view.host}
           sensitive={view.sensitive}
+          palettes={state.palettes}
           run={run}
           enable={enable}
         />
@@ -126,11 +136,12 @@ interface SitePanelProps {
   site: SiteView;
   host: string;
   sensitive: boolean;
-  run: (request: Request) => Promise<void>;
+  palettes: PaletteSummary[];
+  run: (request: StateRequest) => Promise<void>;
   enable: (site: SiteView) => Promise<void>;
 }
 
-function SitePanel({ site, host, sensitive, run, enable }: SitePanelProps) {
+function SitePanel({ site, host, sensitive, palettes, run, enable }: SitePanelProps) {
   const active = site.templates.find((t) => t.id === site.templateId);
   const setSetting = (id: string, value: SettingValue) => {
     if (active) void run({ type: 'setSettings', templateId: active.id, values: { [id]: value } });
@@ -175,9 +186,12 @@ function SitePanel({ site, host, sensitive, run, enable }: SitePanelProps) {
         <>
           {active && (
             <div className="template">
-              <p className="template-name">
-                {active.name} <span className="version">v{active.version}</span>
-              </p>
+              <div className="template-head">
+                <p className="template-name">
+                  {active.name} <span className="version">v{active.version}</span>
+                </p>
+                <HealthBadge health={site.health} />
+              </div>
               <p className="muted">{active.summary}</p>
               {active.variants.length > 0 && (
                 <div className="setting">
@@ -211,15 +225,37 @@ function SitePanel({ site, host, sensitive, run, enable }: SitePanelProps) {
                   onChange={(v) => setSetting(s.id, v)}
                 />
               ))}
-              {active.settings.length > 0 && (
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => void run({ type: 'resetSettings', templateId: active.id })}
-                >
-                  Reset settings
-                </button>
+              {active.usesPalettes && palettes.length > 0 && (
+                <PalettePicker
+                  palettes={palettes}
+                  value={site.paletteId}
+                  onChange={(paletteId) =>
+                    void run({ type: 'setPalette', adapterId: site.adapterId, paletteId })
+                  }
+                />
               )}
+              <div className="template-actions">
+                {active.settings.length > 0 && (
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() => void run({ type: 'resetSettings', templateId: active.id })}
+                  >
+                    Reset settings
+                  </button>
+                )}
+                <a
+                  className="link"
+                  href={issueUrl(site, active, {
+                    extensionVersion: browser.runtime.getManifest().version,
+                    userAgent: navigator.userAgent,
+                  })}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Looks broken?
+                </a>
+              </div>
             </div>
           )}
           <fieldset className="templates">
@@ -252,5 +288,60 @@ function SitePanel({ site, host, sensitive, run, enable }: SitePanelProps) {
         </>
       )}
     </section>
+  );
+}
+
+interface PalettePickerProps {
+  palettes: PaletteSummary[];
+  /** null = the template's own colours (or the site's). */
+  value: string | null;
+  onChange: (paletteId: string | null) => void;
+}
+
+function PalettePicker({ palettes, value, onChange }: PalettePickerProps) {
+  return (
+    <fieldset className="palettes">
+      <legend>Colours</legend>
+      <label>
+        <input
+          type="radio"
+          name="palette"
+          checked={value === null}
+          onChange={() => onChange(null)}
+        />
+        Default
+      </label>
+      {palettes.map((p) => (
+        <label key={p.id}>
+          <input
+            type="radio"
+            name="palette"
+            checked={value === p.id}
+            onChange={() => onChange(p.id)}
+          />
+          <span className="swatches" aria-hidden="true">
+            {p.swatches.map((color) => (
+              <span key={color} style={{ background: color }} />
+            ))}
+          </span>
+          {p.name}
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+function HealthBadge({ health }: { health: TemplateHealth | null }) {
+  if (!health || health.status === 'unknown') return null;
+  if (health.status === 'working') return <span className="badge ok">Works here</span>;
+  const parts = health.failed.length;
+  const text =
+    parts > 0
+      ? `May be broken (${parts} ${parts === 1 ? 'part' : 'parts'} not found)`
+      : 'Colours may not apply';
+  return (
+    <span className="badge warn" title={health.failed.join(', ')}>
+      {text}
+    </span>
   );
 }

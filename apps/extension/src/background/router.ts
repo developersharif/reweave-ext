@@ -3,8 +3,8 @@
  * extension pages as senders, applies the change, and answers with the new AppState.
  */
 import {
+  type Library,
   MESSAGE_ERRORS,
-  type MessageErrorCode,
   parseRequest,
   type Request,
   type Response,
@@ -21,17 +21,12 @@ import {
   setSites,
 } from '../shared/storage';
 import { recompile, validUserSettings } from './compile-service';
+import { exportLibrary, importLibrary, importTemplate, uninstallTemplate } from './library';
+import { recompileAll } from './lifecycle';
+import { Refusal } from './refusal';
 import { type Registry, templatesFor } from './registry';
 import { isGranted, syncRegistrations } from './sites';
 import { getAppState, problems } from './state';
-
-class Refusal extends Error {
-  readonly code: MessageErrorCode;
-  constructor(code: MessageErrorCode, message: string) {
-    super(message);
-    this.code = code;
-  }
-}
 
 /** Popup and options pages only; content scripts and other extensions are refused. */
 export function isTrustedSender(
@@ -65,11 +60,12 @@ export async function setSiteEnabled(
   }
   const sites = await getSites();
   const current = sites[adapterId];
-  // First enable: start with the first installed template rather than "Original site".
-  const templateId =
-    current?.templateId !== undefined
-      ? current.templateId
+  // First enable: start with the site's default template rather than "Original site".
+  const fallback =
+    site.defaultTemplateId && reg.templates.has(site.defaultTemplateId)
+      ? site.defaultTemplateId
       : (templatesFor(reg, adapterId)[0]?.manifest.id ?? null);
+  const templateId = current?.templateId !== undefined ? current.templateId : fallback;
   sites[adapterId] = { ...current, enabled, templateId };
   await setSites(sites);
   await syncRegistrations();
@@ -89,17 +85,38 @@ export async function onPermissionsAdded(reg: Registry, origins: readonly string
   }
 }
 
-async function apply(reg: Registry, req: Request): Promise<void> {
+/** Applies a request. Returns the registry when the request changed it (library changes). */
+async function apply(reg: Registry, req: Request): Promise<Registry | undefined> {
   switch (req.type) {
     case 'getState':
+    case 'exportLibrary':
       return;
+    case 'importTemplate': {
+      const { reg: next, templateId } = await importTemplate(reg, req.files);
+      // An update to an installed template applies wherever it is in use.
+      for (const [adapterId, s] of Object.entries(await getSites()))
+        if (s.templateId === templateId) await refreshSite(next, adapterId);
+      return next;
+    }
+    case 'uninstallTemplate': {
+      const { reg: next, changed } = await uninstallTemplate(reg, req.templateId);
+      for (const adapterId of changed) await refreshSite(next, adapterId);
+      return next;
+    }
+    case 'importLibrary': {
+      const next = await importLibrary(req.library);
+      await syncRegistrations(); // sites without access on this browser are disabled
+      await recompileAll(next);
+      return next;
+    }
     case 'setPaused': {
       const prefs = await getPrefs();
       await setPrefs({ ...prefs, paused: req.paused });
       return;
     }
     case 'setSiteEnabled':
-      return setSiteEnabled(reg, req.adapterId, req.enabled);
+      await setSiteEnabled(reg, req.adapterId, req.enabled);
+      return;
     case 'setTemplate': {
       if (!siteById(req.adapterId))
         throw new Refusal('UNKNOWN_SITE', `Unknown site ${req.adapterId}`);
@@ -127,6 +144,21 @@ async function apply(reg: Registry, req: Request): Promise<void> {
       await refreshSite(reg, req.adapterId);
       return;
     }
+    case 'setPalette': {
+      if (!siteById(req.adapterId))
+        throw new Refusal('UNKNOWN_SITE', `Unknown site ${req.adapterId}`);
+      if (req.paletteId !== null && !reg.palettes.has(req.paletteId))
+        throw new Refusal('UNKNOWN_PALETTE', `Palette ${req.paletteId} is not installed`);
+      const sites = await getSites();
+      const { paletteId: _old, ...rest } = sites[req.adapterId] ?? {
+        enabled: false,
+        templateId: null,
+      };
+      sites[req.adapterId] = { ...rest, ...(req.paletteId ? { paletteId: req.paletteId } : {}) };
+      await setSites(sites);
+      await refreshSite(reg, req.adapterId);
+      return;
+    }
     case 'setSettings':
     case 'resetSettings': {
       if (!reg.templates.has(req.templateId))
@@ -145,15 +177,32 @@ async function apply(reg: Registry, req: Request): Promise<void> {
   }
 }
 
-export async function handleRequest(reg: Registry, raw: unknown): Promise<Response<AppState>> {
+/** Answers with the new AppState; `exportLibrary` answers with the library file. */
+export async function handleRequest(
+  reg: Registry,
+  raw: unknown,
+): Promise<Response<AppState | Library>> {
   const req = parseRequest(raw);
   if (!req)
     return { ok: false, error: { code: MESSAGE_ERRORS.BAD_REQUEST, message: 'Malformed request' } };
   try {
-    await apply(reg, req);
-    return { ok: true, data: await getAppState(reg) };
+    const next = (await apply(reg, req)) ?? reg;
+    if (req.type === 'exportLibrary') return { ok: true, data: await exportLibrary() };
+    return { ok: true, data: await getAppState(next) };
   } catch (e) {
-    if (e instanceof Refusal) return { ok: false, error: { code: e.code, message: e.message } };
+    if (e instanceof Refusal) {
+      const diagnostics = e.diagnostics.map(({ code, message, severity, file, path }) => ({
+        code,
+        message,
+        severity,
+        ...(file ? { file } : {}),
+        ...(path ? { path } : {}),
+      }));
+      return {
+        ok: false,
+        error: { code: e.code, message: e.message, ...(diagnostics.length ? { diagnostics } : {}) },
+      };
+    }
     console.error('[reskin] request failed', req.type, e);
     return { ok: false, error: { code: MESSAGE_ERRORS.INTERNAL, message: 'Something went wrong' } };
   }

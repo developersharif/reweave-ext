@@ -12,12 +12,20 @@ const youtube = (over: Partial<SiteView> = {}): SiteView => ({
   enabled: true,
   templateId: 'reskin/focus-youtube',
   variantId: null,
+  paletteId: null,
   templates: [],
   settings: {},
   problem: null,
+  health: null,
+  adapterVersion: '1.1.0',
   ...over,
 });
-const state = (site: SiteView): AppState => ({ prefs: { paused: false }, sites: [site] });
+const state = (site: SiteView): AppState => ({
+  prefs: { paused: false },
+  sites: [site],
+  palettes: [],
+  library: [],
+});
 
 describe('popupView', () => {
   it('shows the site when the tab is on a supported site', () => {

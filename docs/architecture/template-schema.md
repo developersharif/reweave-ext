@@ -45,6 +45,8 @@ minimal-youtube/
 
 On publish, the API validates, sanitizes, compiles a **bundle** (§9), stores it in R2, and records metadata in D1.
 
+Until the catalog exists (M7), a `.zip` of this folder can be imported in the extension's library. The zip may contain the files at its root or inside one top-level folder. The extension validates and sanitizes it on the device before installing it (D-034).
+
 ---
 
 ## 3. Manifest (`template.json`)
@@ -248,6 +250,9 @@ Tokens make templates and palettes interchangeable ("wear Catppuccin on any toke
 - Resolution order (later wins): standard defaults → template `tokens.defaults` → active `variant.tokens` → **user's palette** (if the template declares `consumes: "standard/v1"`) → user overrides.
 - A **Palette** package is `{ schemaVersion, id, name, version, license, tokens: <DTCG subset>, modes?: { light, dark } }`. `tokens` is two levels deep (`{ "color": { "bg": { "$value": … } } }`). Supported `$value` shapes: DTCG color objects (`hex` is used for `srgb`/`display-p3`; `oklch`, `oklab`, `lab`, `lch`, `hsl`, `hwb` are converted from `components`), dimension `{ value, unit: px|rem }`, duration `{ value, unit: ms|s }`, numbers, and `fontFamily` strings or arrays. Plain CSS strings (`"#1a1a2e"`, `"12px"`) are accepted as a convenience. Unknown tokens are a warning and ignored. Palettes contain no CSS and no selectors, so they are low-risk and need lighter review.
 - Every token value is validated against its type before it reaches CSS (hex/named/functional colors, `px|rem|em|%|vw|vh|ch` dimensions, quoted safe font names), so a palette can't break out of its declaration.
+- **Site colours come from the adapter, not from template CSS** (D-033). For a token-aware template, the compiler pushes each colour token that is set (by the template, a variant, a palette or the user) into the site's own colour variables, through the adapter's theme map (§11.2). Tokens nobody sets follow the site's colours, in light and dark.
+  - A token-aware template should use `token(color-*)` for anything it adds, and must not paint the site's backgrounds or text itself: the theme map already does it, and a palette can then recolour the template.
+  - The bundled templates are tested for this.
 
 ---
 
@@ -366,7 +371,8 @@ Adapters live in the monorepo (`packages/adapters/<site>/adapter.json`), are ope
 - `components.*.selector`: selector list. Prefer stable hooks in this order: custom element names → `data-testid`/`data-*` → ARIA roles/labels → ids → class names. **Hashed/atomic class names are prohibited** in adapters (they're what breaks).
 - `shadowRoots`: list of `{ host: <selector>, components: [...] }` for open shadow roots that need per-root style injection (e.g. Reddit's web components). See `extension-architecture.md` §4.
 - `navigationEvents`: optional site-specific DOM event names, dispatched on `document`, that mean "in-page navigation finished, the new page is rendered". The runtime detects URL changes itself (Navigation API, `popstate`, poll); these events only end the grace period in which the previous route's sheets stay on, and they trigger probes (`extension-architecture.md` §4).
-- `probes`: cheap `querySelector` checks the content script runs after load (and occasionally after navigation) to compute **local health**. Aggregate, anonymous probe results (opt-in) drive adapter breakage alerts. See `security-model.md` §5 for what is and isn't sent.
+- `probes`: cheap `querySelector` checks the content script runs after load and after navigation to compute **local health** (D-036). Aggregate, anonymous probe results (opt-in, M8) drive adapter breakage alerts. See `security-model.md` §4 for what is and isn't sent.
+- `theme` (optional): the site's colour variables, mapped to standard colour tokens (§11.2).
 
 ### 11.1 Compatibility model
 
@@ -377,6 +383,22 @@ Adapters live in the monorepo (`packages/adapters/<site>/adapter.json`), are ope
   - `Broken` — core components (cover route) missing.
   - `Unverified` — no data for 30 days.
 - Templates with `rawSelectors: true` get a "may break when the site updates" label and lower ranking weight.
+
+### 11.2 Theme map (D-033)
+
+```json
+"theme": {
+  "scope": ":root, [dark], [light], [style*=\"--yt-lightsource\"]",
+  "follow": { "color.bg": "--yt-sys-color-baseline--base-background" },
+  "bind": { "color.bg": ["--yt-sys-color-baseline--base-background", "--t3e41d7b17b187f69"] }
+}
+```
+
+- `scope`: a selector list where the site defines its colour variables. The compiler parses it like any selector (no raw text, no `:--` components).
+- `follow`: token → the site variable whose value the token takes when nobody sets it. Compiled to `--rk-color-bg: var(--yt-sys-…, <default>)`.
+- `bind`: token → site variables that take the token's value when someone sets it. Compiled to `--t3e41…: var(--rk-color-bg) !important`. A site variable may appear under only one token, and `--rk-*` names are reserved.
+- The rule is compiled only for templates with `tokens.consumes: "standard/v1"`, into the group that applies on every route.
+- YouTube's map is generated from the live site by `apps/extension/scripts/map-youtube-theme.mjs` (technical-research §5.4). Re-run it when health reports "Colours may not apply".
 
 ---
 

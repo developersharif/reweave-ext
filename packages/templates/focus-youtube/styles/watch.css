@@ -3,3 +3,14 @@
 :--primary-column {
   max-width: setting(maxWidth) !important;
 }
+
+/* Without recommendations, centre the column instead of leaving a gap on the right.
+   The padding replaces YouTube's side margin, so the text never touches the edge on
+   narrow windows. */
+@setting hideRelated {
+  :--primary-column {
+    margin-inline: auto !important;
+    padding-inline: 24px !important;
+    box-sizing: border-box !important;
+  }
+}

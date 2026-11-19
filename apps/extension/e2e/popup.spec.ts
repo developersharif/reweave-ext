@@ -44,6 +44,28 @@ test('popup on a YouTube tab: enable, change a setting, switch to Original site'
   };
   expect(state.data.sites[0]?.settings.hideHomeFeed).toBe(true);
 
+  // Palette picker: Focus uses palettes.
+  const nord = popup.getByRole('radio', { name: 'Nord' });
+  await nord.click();
+  await expect(nord).toBeChecked();
+  const withPalette = (await harness.send({ type: 'getState' })) as {
+    data: { sites: { paletteId: string | null }[] };
+  };
+  expect(withPalette.data.sites[0]?.paletteId).toBe('reskin/nord');
+
+  // Variant (T-3.7): "Deep focus" turns on its settings; the user's own value stays.
+  await popup.getByLabel('Variant').selectOption({ label: 'Deep focus' });
+  await expect(popup.getByRole('checkbox', { name: 'Hide comments' })).toBeChecked();
+  await expect(popup.getByRole('checkbox', { name: 'Hide recommendations' })).toBeChecked();
+  await expect(popup.getByRole('checkbox', { name: 'Hide home feed' })).toBeChecked();
+  const withVariant = (await harness.send({ type: 'getState' })) as {
+    data: { sites: { variantId: string | null; settings: Record<string, unknown> }[] };
+  };
+  expect(withVariant.data.sites[0]).toMatchObject({
+    variantId: 'deep-focus',
+    settings: { hideComments: true, hideRelated: true },
+  });
+
   const original = popup.getByRole('radio', { name: 'Original site' });
   await original.click();
   await expect(original).toBeChecked();

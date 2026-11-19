@@ -35,7 +35,8 @@ Non-negotiables are summarized in `AGENTS.md`. Research background: `docs/resear
 | T7 | Dependency compromise in the extension | Malicious npm update | Minimal deps; lockfile; pinned versions; Renovate PRs reviewed; no remote code; strict default extension CSP | repo |
 | T8 | Site fingerprinting / hostile detection | LinkedIn-style probing of `web_accessible_resources` | Expose **no** web-accessible resources; no DOM nodes, attributes or page-world globals (adopted sheets add no nodes). Styling itself stays detectable (the page can list `document.adoptedStyleSheets` and read computed styles), so compiled CSS carries no template ids, names or comments (R-18) | extension |
 | T9 | Message spoofing | Page sends crafted messages | Content script ignores `window.postMessage` and sends no messages at all (it only reads storage); the background accepts requests only from our own extension pages (sender id + extension-origin URL), so a compromised page or content script can't change settings; all runtime messages schema-validated; `externally_connectable` limited to our domain (M7) | extension |
-| T10 | Privacy leak via telemetry | URLs in reports | No telemetry by default; opt-in reports carry only ids/versions/probe ids; never URLs, titles, DOM text; screenshots only if user attaches manually (M8+) | extension, api |
+| T10 | Privacy leak via telemetry | URLs in reports | No telemetry by default; opt-in reports carry only ids/versions/probe ids; never URLs, titles, DOM text; screenshots only if user attaches manually (M8+). The M3 "Looks broken?" link prefills a GitHub issue with ids, versions, failed parts, extension version and browser name only; the user reviews and submits it (D-036) | extension, api |
+| T11 | Hostile template `.zip` or library file (M3 import) | Zip bomb; `../` paths; a bundle with `@import` beacons; a library file that points sites at junk | The options page's zip reader refuses traversal and hidden-path tricks, encrypted and ZIP64 archives, more than 200 files or 2 MB, and entries whose inflated size or CRC differs from the directory (checked while inflating). The background then validates the files and compiles or sanitizes every style before storing anything. Stored templates are re-validated on every load, and every compile sanitizes again (D-034). Library files are schema-validated whole; template ids, palettes and settings are checked again when used | extension |
 
 Attack fixtures: `packages/compiler/test/attacks/*.css` (34 files covering T1–T4 as of M1), each starting with `/* expect: CODE */` or `/* expect: CODE (review) */`; `packages/compiler/test/attacks.test.ts` runs every file through the full compiler. A benign corpus (`test/benign/`) must compile with no diagnostics. **The sanitizer is done when every fixture is caught**, and any new bypass gets a fixture first.
 
@@ -43,7 +44,8 @@ Attack fixtures: `packages/compiler/test/attacks/*.css` (34 files covering T1–
 
 | Data | Where | Leaves device? | Retention |
 |---|---|---|---|
-| Site assignments, settings, installed templates | `chrome.storage.local` (+ `storage.sync` for small prefs) | Only via the user's own Chrome sync | Until uninstall |
+| Site assignments, settings, installed templates | `chrome.storage.local`; template choices and settings (not templates, not site access) also in `storage.sync` (D-035) | Only via the user's own browser sync | Until uninstall |
+| Library export file | Wherever the user saves it | Only if the user shares it: prefs, choices, settings, imported templates; no URLs or history | User's choice |
 | Compiled CSS, probe health | `chrome.storage.local` | No (M8: opt-in aggregate probe results only) | Overwritten |
 | Template downloads | Worker logs (M7) | Yes: template id/version, IP in transit | Don't persist IPs; counters aggregated by day |
 | Breakage reports (M8, opt-in) | D1/Analytics Engine | Yes: ids, versions, failed probe ids | 90 days |

@@ -1,7 +1,7 @@
 import { compiledKey, STORAGE_KEYS, STORAGE_VERSION, settingsKey } from '@reskin/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { browser } from 'wxt/browser';
-import { fakeBrowser } from 'wxt/testing/fake-browser';
+import type { AppState } from '../shared/messages';
 import { getCompiled, getPrefs, getSites, setSites } from '../shared/storage';
 import { recompile } from './compile-service';
 import { startup } from './lifecycle';
@@ -9,32 +9,19 @@ import { migrate } from './migrations';
 import { loadRegistry, registry } from './registry';
 import { handleRequest, isTrustedSender } from './router';
 import { syncRegistrations } from './sites';
+import { type FakeApis, resetBrowser } from './testing';
 
 const FOCUS = 'reskin/focus-youtube';
-let granted = true;
-let registered: string[] = [];
+let apis: FakeApis;
 
 beforeEach(() => {
-  fakeBrowser.reset();
-  granted = true;
-  registered = [];
-  // permissions and scripting are not implemented by the fake browser.
-  vi.spyOn(browser.permissions, 'contains').mockImplementation(async () => granted);
-  vi.spyOn(browser.scripting, 'getRegisteredContentScripts').mockImplementation(async () =>
-    registered.map((id) => ({ id }) as Browser.scripting.RegisteredContentScript),
-  );
-  vi.spyOn(browser.scripting, 'registerContentScripts').mockImplementation(async (scripts) => {
-    registered.push(...scripts.map((s) => s.id));
-  });
-  vi.spyOn(browser.scripting, 'unregisterContentScripts').mockImplementation(async (filter) => {
-    registered = registered.filter((id) => !filter?.ids?.includes(id));
-  });
+  apis = resetBrowser();
 });
 
 const reg = registry();
-const ok = <T>(r: { ok: boolean; data?: T }) => {
+const ok = (r: { ok: boolean; data?: unknown }) => {
   expect(r.ok).toBe(true);
-  return r.data as T;
+  return r.data as AppState;
 };
 
 describe('migrations', () => {
@@ -62,7 +49,17 @@ describe('registry', () => {
   it('loads the bundled adapter and template without problems', () => {
     expect(reg.problems).toEqual([]);
     expect([...reg.adapters.keys()]).toEqual(['youtube']);
-    expect([...reg.templates.keys()]).toEqual([FOCUS]);
+    expect([...reg.templates.keys()].sort()).toEqual([
+      'reskin/calm-youtube',
+      'reskin/compact-youtube',
+      FOCUS,
+    ]);
+    expect([...reg.palettes.keys()]).toEqual([
+      'reskin/default-dark',
+      'reskin/default-light',
+      'reskin/catppuccin-mocha',
+      'reskin/nord',
+    ]);
   });
 
   it('skips invalid entries and reports why', () => {
@@ -138,25 +135,27 @@ describe('message router', () => {
     expect(state.sites[0]?.settings).toEqual({
       hideShorts: true,
       hideHomeFeed: false,
+      hideRelated: false,
+      hideComments: false,
       maxWidth: 1280,
     });
-    expect(registered).toEqual(['rk-site-youtube']);
+    expect(apis.registered).toEqual(['rk-site-youtube']);
     expect(await browser.storage.local.get(compiledKey('youtube'))).not.toEqual({});
 
     ok(await handleRequest(reg, { type: 'setSiteEnabled', adapterId: 'youtube', enabled: false }));
-    expect(registered).toEqual([]);
+    expect(apis.registered).toEqual([]);
     expect(await getCompiled('youtube')).toBeNull();
   });
 
   it('refuses to enable a site without its permission', async () => {
-    granted = false;
+    apis.granted = false;
     expect(
       await handleRequest(reg, { type: 'setSiteEnabled', adapterId: 'youtube', enabled: true }),
     ).toMatchObject({
       ok: false,
       error: { code: 'PERMISSION_MISSING' },
     });
-    expect(registered).toEqual([]);
+    expect(apis.registered).toEqual([]);
   });
 
   it('switches templates, including "Original site", and validates ids', async () => {
@@ -192,6 +191,50 @@ describe('message router', () => {
     expect(state.sites[0]?.settings).toMatchObject({ maxWidth: 1280 });
   });
 
+  it('applies a palette to templates that use palettes, and validates its id', async () => {
+    ok(await handleRequest(reg, { type: 'setSiteEnabled', adapterId: 'youtube', enabled: true }));
+    const state = ok(
+      await handleRequest(reg, {
+        type: 'setPalette',
+        adapterId: 'youtube',
+        paletteId: 'reskin/nord',
+      }),
+    );
+    expect(state.sites[0]?.paletteId).toBe('reskin/nord');
+    expect(state.palettes.find((p) => p.id === 'reskin/nord')?.swatches).toEqual([
+      '#2e3440',
+      '#3b4252',
+      '#eceff4',
+      '#88c0d0',
+    ]);
+    const css = (await getCompiled('youtube'))?.groups[0]?.css ?? '';
+    expect(css).toContain('--rk-color-bg:#2e3440');
+    expect(css).toContain('--t3e41d7b17b187f69:var(--rk-color-bg)!important');
+
+    // The palette survives a template switch, and "none" restores the site's colours.
+    ok(
+      await handleRequest(reg, {
+        type: 'setTemplate',
+        adapterId: 'youtube',
+        templateId: 'reskin/compact-youtube',
+      }),
+    );
+    expect((await getSites()).youtube?.paletteId).toBe('reskin/nord');
+    ok(await handleRequest(reg, { type: 'setPalette', adapterId: 'youtube', paletteId: null }));
+    expect((await getSites()).youtube).not.toHaveProperty('paletteId');
+    expect((await getCompiled('youtube'))?.groups[0]?.css).toContain(
+      '--rk-color-bg:var(--yt-sys-color-baseline--base-background',
+    );
+
+    expect(
+      await handleRequest(reg, {
+        type: 'setPalette',
+        adapterId: 'youtube',
+        paletteId: 'someone/else',
+      }),
+    ).toMatchObject({ ok: false, error: { code: 'UNKNOWN_PALETTE' } });
+  });
+
   it('stores the global pause', async () => {
     const state = ok(await handleRequest(reg, { type: 'setPaused', paused: true }));
     expect(state.prefs.paused).toBe(true);
@@ -201,9 +244,9 @@ describe('message router', () => {
 describe('registration sync', () => {
   it('disables a site and unregisters its script when the permission is revoked', async () => {
     ok(await handleRequest(reg, { type: 'setSiteEnabled', adapterId: 'youtube', enabled: true }));
-    granted = false;
+    apis.granted = false;
     expect(await syncRegistrations()).toEqual(['youtube']);
-    expect(registered).toEqual([]);
+    expect(apis.registered).toEqual([]);
     expect((await getSites()).youtube?.enabled).toBe(false);
   });
 });
@@ -227,6 +270,6 @@ describe('exclusive', () => {
     const { onPermissionsAdded } = await import('./router');
     await onPermissionsAdded(reg, ['https://www.youtube.com/*']);
     expect((await getSites()).youtube).toMatchObject({ enabled: true, templateId: FOCUS });
-    expect(registered).toEqual(['rk-site-youtube']);
+    expect(apis.registered).toEqual(['rk-site-youtube']);
   });
 });

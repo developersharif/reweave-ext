@@ -37,20 +37,22 @@ Modules marked (Mx) don't exist yet.
 apps/extension/
 ├── wxt.config.ts                # manifest; optional_host_permissions from src/shared/sites.ts
 ├── src/entrypoints/             # thin WXT entrypoints only
-│   ├── background.ts            # service worker: wires lifecycle, permission events, message router
+│   ├── background.ts            # service worker: lifecycle, permission and storage events, message router
 │   ├── content.ts               # runtime-registered, document_start, isolated world
 │   ├── popup/                   # React shell; UI lives in src/popup/
-│   ├── options/ (M3)            # React: library, per-site assignments, import/export, prefs
-│   ├── welcome/ (M3)            # React: first-run
+│   ├── options/                 # React shell; the library page lives in src/options/
+│   ├── welcome/                 # React shell; opened on first install (D-037); UI in src/welcome/
 │   └── studio.content/ (M5)     # injected on demand via scripting.executeScript
 └── src/
     ├── background/
-    │   ├── registry.ts          # bundled adapters + templates, validated on load (imported/catalog: M3/M7)
+    │   ├── registry.ts          # bundled adapters, templates, palettes + imported templates (rk:installed), validated on load
     │   ├── compile-service.ts   # @reskin/compiler → rk:compiled:<adapter>; writes only when the hash changes
     │   ├── sites.ts             # content-script registration ⇔ (permission granted AND site enabled)
     │   ├── router.ts            # validated messages from extension pages only; returns AppState
-    │   ├── state.ts             # AppState for popup/options
-    │   ├── lifecycle.ts         # install/update/startup: migrate, re-sync registrations, recompile
+    │   ├── state.ts             # AppState for popup/options/welcome, incl. template health
+    │   ├── library.ts           # import/uninstall templates, export/import the library file (D-034)
+    │   ├── sync.ts              # storage.sync mirror of choices (D-035)
+    │   ├── lifecycle.ts         # install/update/startup: migrate, reconcile sync, re-sync registrations, recompile
     │   ├── migrations.ts        # storage schema migrations (rk:v)
     │   ├── exclusive.ts         # runs state changes one at a time
     │   └── updates.ts (M7)      # signed catalog/adapter updates
@@ -60,8 +62,12 @@ apps/extension/
     │   ├── navigation.ts        # Navigation API → popstate/pageshow → poll; adapter navigationEvents
     │   ├── guard.ts             # protected-component guard (T-2.9, §7.1)
     │   ├── shadow.ts (M4)       # per-shadow-root sheets
-    │   └── probes.ts (M3)       # adapter health checks
-    ├── popup/                   # Popup.tsx, SettingControl.tsx, view.ts (site detection, testable)
+    │   └── probes.ts            # adapter health checks (§7)
+    ├── popup/                   # Popup.tsx, SettingControl.tsx, view.ts (site detection), report.ts ("Looks broken?")
+    ├── options/                 # Library.tsx: sites, templates, backup, pause
+    ├── welcome/                 # Welcome.tsx: sites → access → template cards → "Try it"
+    ├── library/                 # zip.ts: the template .zip reader (D-034); make-zip.ts for tests
+    ├── ui/tokens.css            # colours and base styles shared by the extension pages
     └── shared/
         ├── sites.ts             # supported sites: adapter id ↔ hosts ↔ permission origins
         ├── messages.ts          # AppState types + send(); request schemas live in @reskin/schema
@@ -125,6 +131,8 @@ Settings are **compiled into the CSS**, not toggled through page attributes (mor
 - Boolean/select `@setting` blocks and `hide … when` rules are included or excluded at compile time.
 - Range/color/font settings and all tokens are emitted as custom properties in a generated `:root { --rk-…: … }` rule in the base group.
 - Popup change → background recompiles → storage → content script `replaceSync`. Slider drags are debounced (120 ms). If that feels laggy, the content script could apply the custom property directly for instant feedback (a later optimization).
+- **Palettes** (`packages/palettes`, bundled: Default Dark/Light, Catppuccin Mocha, Nord) are colours only. The user picks one per site (`setPalette`; `rk:sites[adapter].paletteId`). It applies to templates that declare `tokens.consumes: "standard/v1"`, and the adapter's theme map carries it into the site's own colours (D-033). Palette `modes` are not applied in v1.
+- **Variants** are chosen with `setTemplate` (`variantId`). Their settings and tokens are merged at compile time.
 
 > Per D-021, the only runtime state on the page is which route-group sheets are enabled.
 
@@ -138,10 +146,14 @@ Settings are **compiled into the CSS**, not toggled through page attributes (mor
 
 ## 7. Health probes
 
-- After route change + idle (`requestIdleCallback`, ~2 s timeout), run adapter `probes` for that route: `document.querySelector` (or within declared shadow scopes) → `ok | missing`.
-- Store `rk:health:<adapter>` = `{ adapterVersion, results: { componentId: { status, checkedAt } } }` (local only).
-- Popup derives the template's local status: all components the template uses are `ok` → "Works here"; any missing → "May be broken (n parts not found)".
-- Never on sensitive routes. Upload only in M8 and only with opt-in (D-017).
+Decided in D-036.
+- The compiled output carries the adapter's probes with their selectors (`probes`) and the site variables its theme rule writes (`themeVars`).
+- **When:** 2 s after the page settles, the content script runs the current route's probes (`document.querySelector`; within declared shadow scopes in M4). Failures are re-checked after 6 s for late renders. "Settles" means after load, after the adapter's navigation event, or after the grace period ends.
+- **Theme check:** once per page load, with our sheets off, it checks that at least half of `themeVars` are still defined on `<html>`.
+- **Storage:** `rk:health:<adapter>` = `{ adapterVersion, probes: { componentId: { status: ok|failed, route, checkedAt } }, theme?: { status, checkedAt } }`. Local only, rewritten only on change or every 6 h.
+- **Popup:** only probes of components the active template uses count. "Works here", or "May be broken (n parts not found)", or "Colours may not apply".
+- **"Looks broken?"** opens a prefilled GitHub issue (ids, versions, failed parts, extension version, browser name; never URLs or page content) for the user to review.
+- Never on sensitive routes or while paused. Upload only in M8, and only with opt-in (D-017).
 
 ### 7.1 Protected-component guard (T-2.9)
 
@@ -157,26 +169,28 @@ The compiler rejects any rule that targets an adapter `protected` component (D-0
 |---|---|---|
 | `rk:v` | integer | storage schema version; migrations in `background/migrations.ts` |
 | `rk:prefs` | `{ paused, telemetryOptIn: false, … }` | |
-| `rk:sites` | `{ [adapterId]: { enabled, templateId \| null, variantId?, paletteId? } }` | mirrored to `storage.sync` (M3) |
+| `rk:sites` | `{ [adapterId]: { enabled, templateId \| null, variantId?, paletteId? } }` | mirrored to `storage.sync` without `enabled` (D-035) |
 | `rk:settings:<templateId>` | `{ [settingId]: value }` | mirrored to `storage.sync` |
-| `rk:installed` (M3) | `{ [templateId]: { version, origin: "bundled"\|"imported"\|"catalog"\|"local", bundle } }` | sources only; bundled templates are not stored (they ship in the package) |
-| `rk:compiled:<adapterId>` | the compiler output (D-021 contract): `{ engineVersion, templateId, templateVersion, adapterId, adapterVersion, hash, groups: [{ routes, css }], sensitiveRoutes, routeTable, rawSelectors, components, assets, navigationEvents, protectedSelectors }`; shadow groups arrive in M4 | the **only** key the content script needs. Absent = nothing applies (site off, "Original site", or compile failed) |
-| `rk:health:<adapterId>` | probe results | |
+| `rk:installed` | `{ [templateId]: { version, origin: "imported", installedAt, bundle: { manifest, sources, assets } } }` (`catalog` M7, `local` M5) | the manifest as authored, re-validated on every load (D-034); bundled templates are not stored (they ship in the package) |
+| `rk:sync:dirty` | string[] | keys changed locally but not yet written to `storage.sync` (D-035) |
+| `rk:compiled:<adapterId>` | the compiler output (D-021 contract): `{ engineVersion, templateId, templateVersion, adapterId, adapterVersion, hash, groups: [{ routes, css }], sensitiveRoutes, routeTable, rawSelectors, components, assets, navigationEvents, protectedSelectors, probes, themeVars }`; shadow groups arrive in M4 | the **only** key the content script needs. Absent = nothing applies (site off, "Original site", or compile failed) |
+| `rk:health:<adapterId>` | probe and theme-check results (§7) | written by the content script |
 
 Assets (fonts/images) > 100 KB go to IndexedDB (M7 catalog assets); bundled assets are package files. 🔬 T-0.3 records current quotas (`storage.local`, `storage.sync` per-item/total) from Chrome docs and sets size guards accordingly.
 
 ## 9. Messaging
 
-- **Popup/options → background.** Requests (`RequestSchema` in `@reskin/schema`): `getState`, `setSiteEnabled`, `setTemplate` (null = "Original site", optional variant), `setSettings`, `resetSettings`, `setPaused`.
-  - Later: `setPalette` (M3), `importBundle`/`exportLibrary` (M3), `reportBroken` (M8).
+- **Popup/options/welcome → background.** Requests (`RequestSchema` in `@reskin/schema`): `getState`, `setSiteEnabled`, `setTemplate` (null = "Original site", optional variant), `setSettings`, `resetSettings`, `setPaused`, `setPalette`, `importTemplate` (base64 files of an unpacked `.zip`), `uninstallTemplate`, `exportLibrary` (answers with the library file instead of AppState), `importLibrary`.
+  - Later: `reportBroken` (M8).
   - Every request is schema-validated, and accepted only from our own extension pages (sender id + extension-origin URL). Content scripts and other extensions are refused.
-  - Every answer is `{ ok: true, data: AppState } | { ok: false, error: { code, message } }`, with stable error codes.
+  - Every answer is `{ ok: true, data: AppState } | { ok: false, error: { code, message, diagnostics? } }`, with stable error codes. Import refusals (`IMPORT_INVALID`) carry the validator's diagnostics.
   - State changes run one at a time (`exclusive.ts`).
 - **Permission requests** happen in the popup/options/welcome page, because they need a user gesture.
   - The page asks for the site's origin, then sends `setSiteEnabled`.
   - The background also enables a site on `permissions.onAdded`, because the popup can close while the prompt is open. The same path covers access granted from the browser's own site-access UI.
   - `permissions.onRemoved` disables the site and unregisters its script.
-- **Content script ← background:** no messaging. It reacts to `storage.onChanged` for its adapter's compiled key and `rk:prefs`.
+- **Content script ← background:** no messaging. It reacts to `storage.onChanged` for its adapter's compiled key and `rk:prefs`, and writes only `rk:health:<adapter>`.
+- **Sync (D-035):** the background listens to `storage.onChanged`. Local changes to mirrored keys are flushed to `storage.sync` in batches, at most once per 5 s. Remote changes are merged into local storage, then every site is recompiled.
 - Content scripts never listen to `window.postMessage`. `externally_connectable` (website → extension install) arrives in M7, restricted to our domain.
 
 ## 10. Service worker lifecycle

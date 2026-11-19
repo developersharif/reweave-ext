@@ -8,13 +8,17 @@ import {
   type CompiledTemplate,
   compiledKey,
   DEFAULT_PREFS,
+  type Health,
+  healthKey,
   PrefsSchema,
   parseCompiled,
+  parseHealth,
   parseStored,
   STORAGE_KEYS,
 } from '@reskin/schema/runtime';
 import { ProtectedGuard } from './guard';
 import { type Listen, watchNavigation } from './navigation';
+import { mergeHealth, PROBE_DELAY_MS, PROBE_RECHECK_MS, runProbes, themeDefined } from './probes';
 import { enabledGroups, SheetSet } from './sheets';
 
 /** How long the previous route's sheets stay on after the URL changes (extension-architecture §4). */
@@ -25,12 +29,16 @@ export interface RuntimeEnv {
   adapterId: string;
   storage: {
     get: (keys: string[]) => Promise<Record<string, unknown>>;
+    set: (items: Record<string, unknown>) => Promise<void>;
     onChanged: (cb: (changes: Record<string, { newValue?: unknown }>) => void) => void;
   };
   listen: Listen;
   every: (ms: number, fn: () => void) => void;
   after: (ms: number, fn: () => void) => () => void;
+  /** Monotonic time (guard rechecks). */
   now: () => number;
+  /** Wall-clock time (health `checkedAt`). */
+  date: () => number;
 }
 
 export class Runtime {
@@ -44,6 +52,10 @@ export class Runtime {
   #sensitive = false;
   #graceRoute: string | null = null;
   #cancelGrace: (() => void) | null = null;
+  #cancelProbes: (() => void) | null = null;
+  #health: Health | null = null;
+  /** The theme map is checked once per page load. */
+  #themeChecked = false;
 
   constructor(env: RuntimeEnv) {
     this.#env = env;
@@ -57,14 +69,17 @@ export class Runtime {
 
   async start(): Promise<void> {
     const ck = compiledKey(this.#env.adapterId);
+    const hk = healthKey(this.#env.adapterId);
     this.#env.storage.onChanged((changes) => {
       if (ck in changes) this.#setCompiled(changes[ck]?.newValue);
       if (STORAGE_KEYS.prefs in changes) this.#setPrefs(changes[STORAGE_KEYS.prefs]?.newValue);
+      if (hk in changes) this.#setHealth(changes[hk]?.newValue);
       if (ck in changes || STORAGE_KEYS.prefs in changes) this.#render();
     });
-    const data = await this.#env.storage.get([ck, STORAGE_KEYS.prefs]);
+    const data = await this.#env.storage.get([ck, STORAGE_KEYS.prefs, hk]);
     this.#setCompiled(data[ck]);
     this.#setPrefs(data[STORAGE_KEYS.prefs]);
+    this.#setHealth(data[hk]);
     this.#render();
     watchNavigation(
       this.#env.win,
@@ -89,6 +104,10 @@ export class Runtime {
     this.#paused = parseStored(PrefsSchema, value, DEFAULT_PREFS).paused;
   }
 
+  #setHealth(value: unknown): void {
+    this.#health = value === undefined ? null : parseHealth(value);
+  }
+
   #render(): void {
     const c = this.#compiled;
     if (!c) {
@@ -99,6 +118,7 @@ export class Runtime {
     this.#sheets.update(c.groups.map((g) => g.css));
     this.#guard.check(this.#env.now());
     this.#toggle();
+    this.#scheduleProbes();
   }
 
   #matchRoute(): void {
@@ -139,14 +159,56 @@ export class Runtime {
     this.#sheets.adopt();
     this.#guard.check(this.#env.now());
     this.#toggle();
+    this.#scheduleProbes();
   }
 
   #endGrace(): void {
     this.#cancelGrace?.();
     this.#cancelGrace = null;
+    this.#scheduleProbes(); // the new page has rendered (or the grace timer ran out)
     if (this.#graceRoute === null) return;
     this.#graceRoute = null;
     this.#toggle();
+  }
+
+  /** Runs the current route's probes once the page has settled; never on sensitive routes. */
+  #scheduleProbes(): void {
+    this.#cancelProbes?.();
+    this.#cancelProbes = null;
+    const c = this.#compiled;
+    const route = this.#route;
+    if (!c || route === null || this.#sensitive || this.#paused) return;
+    const probes = c.probes.filter((p) => p.route === route);
+    const checkTheme = !this.#themeChecked && c.themeVars.length > 0;
+    if (probes.length === 0 && !checkTheme) return;
+    const doc = this.#env.win.document;
+    this.#cancelProbes = this.#env.after(PROBE_DELAY_MS, () => {
+      const results = runProbes(doc, probes);
+      const theme = checkTheme ? this.#checkTheme(c.themeVars) : undefined;
+      const failed = probes.filter((p) => !results[p.component]);
+      const record = (r: Record<string, boolean>) =>
+        this.#recordHealth({ adapterVersion: c.adapterVersion, route, probes: r, theme });
+      if (failed.length === 0) return record(results);
+      this.#cancelProbes = this.#env.after(PROBE_RECHECK_MS, () =>
+        record({ ...results, ...runProbes(doc, failed) }),
+      );
+    });
+  }
+
+  /** Our own theme rule defines these variables, so measure with our sheets off (no paint in between). */
+  #checkTheme(vars: readonly string[]): boolean {
+    this.#themeChecked = true;
+    this.#sheets.setEnabled([]);
+    const ok = themeDefined(this.#env.win, vars);
+    this.#toggle();
+    return ok;
+  }
+
+  #recordHealth(update: Parameters<typeof mergeHealth>[1]): void {
+    const next = mergeHealth(this.#health, update, this.#env.date());
+    if (!next) return;
+    this.#health = next;
+    void this.#env.storage.set({ [healthKey(this.#env.adapterId)]: next }).catch(() => undefined); // health is best-effort
   }
 
   #onTick(): void {

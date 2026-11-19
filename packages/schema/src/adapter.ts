@@ -3,7 +3,7 @@
  * compiler (it owns the CSS parser); everything else is checked here.
  */
 import * as v from 'valibot';
-import { EVENT_NAME, HOSTNAME, KEBAB_ID, ROUTE_PATH } from './patterns.ts';
+import { CSS_CUSTOM_PROPERTY, EVENT_NAME, HOSTNAME, KEBAB_ID, ROUTE_PATH } from './patterns.ts';
 import { VersionSchema } from './template.ts';
 
 const kebab = v.pipe(v.string(), v.regex(KEBAB_ID, 'Must be kebab-case'));
@@ -25,6 +25,26 @@ export const ComponentSchema = v.object({
   /** Consent/security/legal UI: templates may not style or hide it. */
   protected: v.optional(v.boolean()),
   description: v.optional(v.pipe(v.string(), v.maxLength(200))),
+});
+
+const cssVar = v.pipe(
+  v.string(),
+  v.regex(CSS_CUSTOM_PROPERTY, 'Must be a CSS custom property name'),
+);
+/** Token names are checked against `standard/v1` semantically (validateAdapter). */
+const tokenKey = v.pipe(v.string(), v.maxLength(40));
+
+/**
+ * How the site's own colour variables relate to the standard tokens (template-schema §11.2,
+ * D-033). Platform-maintained, like selectors.
+ */
+export const ThemeSchema = v.object({
+  /** Elements where the site defines its theme variables, e.g. `:root, [dark], [light]`. */
+  scope: v.pipe(v.string(), v.minLength(1), v.maxLength(500)),
+  /** Token → the site variable it reads when no template, variant or palette sets it. */
+  follow: v.optional(v.record(tokenKey, cssVar)),
+  /** Token → the site variables that take the token's value when something sets it. */
+  bind: v.optional(v.record(tokenKey, v.pipe(v.array(cssVar), v.minLength(1), v.maxLength(64)))),
 });
 
 export const AdapterSchema = v.object({
@@ -56,8 +76,10 @@ export const AdapterSchema = v.object({
       v.object({ component: kebab, route: kebab, expect: v.picklist(['present', 'absent']) }),
     ),
   ),
+  theme: v.optional(ThemeSchema),
 });
 
 export type Adapter = v.InferOutput<typeof AdapterSchema>;
 export type AdapterRoute = v.InferOutput<typeof RouteSchema>;
 export type AdapterComponent = v.InferOutput<typeof ComponentSchema>;
+export type AdapterTheme = v.InferOutput<typeof ThemeSchema>;

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Popup } from '../../popup/Popup';
+import '../../ui/tokens.css';
 import './style.css';
 
 /**

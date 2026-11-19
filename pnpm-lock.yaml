@@ -187,6 +187,9 @@ importers:
       '@reskin/compiler':
         specifier: workspace:*
         version: link:../../packages/compiler
+      '@reskin/palettes':
+        specifier: workspace:*
+        version: link:../../packages/palettes
       '@reskin/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -261,6 +264,12 @@ importers:
       '@types/node':
         specifier: ^24
         version: 24.19.2
+
+  packages/palettes:
+    dependencies:
+      '@reskin/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/schema:
     dependencies:

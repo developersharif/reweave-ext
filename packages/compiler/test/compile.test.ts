@@ -131,6 +131,65 @@ describe('spec example golden output', () => {
   });
 });
 
+describe('site theme bindings (D-033)', () => {
+  const themed = {
+    ...adapter,
+    theme: {
+      scope: ':root, [dark]',
+      follow: { 'color.bg': '--site-bg', 'color.text': '--site-text', 'color.link': '--site-cta' },
+      bind: { 'color.bg': ['--site-bg', '--t3e41d7b17b187f69'], 'color.accent': ['--site-cta'] },
+    },
+  };
+  const consuming = (defaults: Record<string, string> = {}): TemplateManifest => ({
+    ...specManifest(),
+    tokens: { consumes: 'standard/v1', defaults },
+  });
+  const themeRule = (input: Partial<CompileInput>) => {
+    const r = compileTemplate({
+      manifest: consuming(),
+      adapter: themed,
+      sources: specSources(),
+      assets: FAKE_ASSETS,
+      ...input,
+    });
+    expect(r.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    return r.output?.groups[0]?.css.match(/:root,\[dark\]\{[^}]*\}/)?.[0] ?? null;
+  };
+
+  it('follows the site for tokens nothing sets, with the standard default as fallback', () => {
+    expect(themeRule({})).toBe(
+      ':root,[dark]{--rk-color-bg:var(--site-bg,#0f0f10);--rk-color-text:var(--site-text,#ececf1);--rk-color-link:var(--site-cta,#8ab4f8)}',
+    );
+  });
+
+  it('pushes tokens set by the palette or the template to the site', () => {
+    expect(themeRule({ palette: { 'color.bg': '#1a1a2e', 'color.accent': '#e94560' } })).toBe(
+      ':root,[dark]{--site-bg:var(--rk-color-bg)!important;--t3e41d7b17b187f69:var(--rk-color-bg)!important;--rk-color-text:var(--site-text,#ececf1);--site-cta:var(--rk-color-accent)!important;--rk-color-link:var(--site-cta,#8ab4f8)}',
+    );
+    expect(themeRule({ manifest: consuming({ 'color.text': '#222222' }) })).not.toContain(
+      '--rk-color-text:var(',
+    );
+  });
+
+  it('is skipped for templates that do not consume standard/v1, and for adapters without a theme', () => {
+    const m = specManifest();
+    expect(themeRule({ manifest: { ...m, tokens: { defaults: {} } } })).toBeNull();
+    expect(themeRule({ adapter })).toBeNull();
+  });
+
+  it('reports an unparsable scope and skips the bindings', () => {
+    const r = compileTemplate({
+      manifest: consuming(),
+      adapter: { ...themed, theme: { ...themed.theme, scope: ':root {' } },
+      sources: specSources(),
+      assets: FAKE_ASSETS,
+    });
+    expect(r.diagnostics).toContainEqual(
+      expect.objectContaining({ code: 'CSS_PARSE_ERROR', path: 'theme.scope' }),
+    );
+  });
+});
+
 describe('output contract', () => {
   it('passes the runtime schema the content script validates with', () => {
     const r = compileTemplate({

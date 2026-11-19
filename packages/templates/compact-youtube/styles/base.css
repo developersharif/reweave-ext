@@ -1,0 +1,11 @@
+/* Compact YouTube. YouTube sizes its grid from custom properties it sets inline on
+   the grid element (computed by its scripts), so overriding them needs !important.
+   These are YouTube's own names: if YouTube renames them, the grid falls back to its
+   default density and nothing breaks. */
+:--video-grid {
+  --ytd-rich-grid-items-per-row: setting(perRow) !important;
+  --ytd-rich-grid-posts-per-row: setting(perRow) !important;
+  --ytd-rich-grid-item-min-width: 0px !important;
+  --ytd-rich-grid-item-margin: 8px !important;
+  --ytd-rich-grid-row-margin: 16px !important;
+}

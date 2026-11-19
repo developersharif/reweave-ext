@@ -6,7 +6,7 @@
  *                          [--palette <palette.json>] [--json]
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import {
   type Adapter,
@@ -16,25 +16,17 @@ import {
   flattenTokenTree,
   hasErrors,
   type SettingValue,
-  type TemplateManifest,
   validateAdapter,
   validatePalette,
-  validateTemplate,
 } from '@reskin/schema';
 import {
   type CompiledTemplate,
   compileTemplate,
+  type LoadedBundle,
+  loadBundle,
   sanitizeCss,
   type TokenMap,
 } from '../src/index.ts';
-
-const MIME: Record<string, string> = {
-  '.woff2': 'font/woff2',
-  '.webp': 'image/webp',
-  '.png': 'image/png',
-  '.avif': 'image/avif',
-  '.svg': 'image/svg+xml',
-};
 
 const USAGE = `Usage:
   reskin validate <dir> [--adapter <adapter.json>]... [--json]
@@ -52,13 +44,6 @@ const defaultIo: Io = {
   color: process.stdout.isTTY === true && !process.env.NO_COLOR,
 };
 
-interface Loaded {
-  manifest?: TemplateManifest;
-  sources: Record<string, string>;
-  assets: Record<string, string>;
-  diagnostics: Diagnostic[];
-}
-
 function readJsonFile(path: string): unknown {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -71,42 +56,17 @@ function loadAdapters(paths: readonly string[], d: Diagnostic[]): Adapter[] {
   });
 }
 
-function loadTemplate(dir: string, adapters: readonly Adapter[]): Loaded {
-  const d: Diagnostic[] = [];
-  const manifestPath = join(dir, 'template.json');
-  if (!existsSync(manifestPath)) {
-    d.push(diag(CODES.FILE_MISSING, 'error', 'template.json not found', { file: 'template.json' }));
-    return { sources: {}, assets: {}, diagnostics: d };
-  }
+function loadTemplate(dir: string, adapters: readonly Adapter[]): LoadedBundle {
   const ctx =
     adapters.length > 0 ? { adapters: Object.fromEntries(adapters.map((a) => [a.id, a])) } : {};
-  const v = validateTemplate(readJsonFile(manifestPath), ctx);
-  d.push(...v.diagnostics.map((x) => ({ ...x, file: 'template.json' })));
-  const manifest = v.value;
-  const sources: Record<string, string> = {};
-  const assets: Record<string, string> = {};
-  if (!manifest) return { sources, assets, diagnostics: d };
-
-  const need = (file: string, path: string) => {
-    if (existsSync(join(dir, file))) return true;
-    d.push(diag(CODES.FILE_MISSING, 'error', `${file} not found`, { file: 'template.json', path }));
-    return false;
-  };
-  manifest.targets.forEach((t, ti) => {
-    t.styles.forEach((s, si) => {
-      if (!(s.file in sources) && need(s.file, `targets.${ti}.styles.${si}.file`))
-        sources[s.file] = readFileSync(join(dir, s.file), 'utf8');
-    });
-  });
-  (manifest.assets ?? []).forEach((a, i) => {
-    if (!need(a.file, `assets.${i}.file`)) return;
-    const mime = MIME[extname(a.file)] ?? 'application/octet-stream';
-    assets[a.id] = `data:${mime};base64,${readFileSync(join(dir, a.file)).toString('base64')}`;
-  });
-  manifest.previews.forEach((p, i) => {
-    need(p.file, `previews.${i}.file`);
-  });
-  return { manifest, sources, assets, diagnostics: d };
+  return loadBundle(
+    {
+      has: (file) => existsSync(join(dir, file)),
+      text: (file) => readFileSync(join(dir, file), 'utf8'),
+      base64: (file) => readFileSync(join(dir, file)).toString('base64'),
+    },
+    ctx,
+  );
 }
 
 function parseSetValue(raw: string): SettingValue {

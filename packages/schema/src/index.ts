@@ -3,6 +3,7 @@ export const PACKAGE_NAME = '@reskin/schema';
 
 export * from './adapter.ts';
 export * from './diagnostics.ts';
+export * from './library.ts';
 export * from './palette.ts';
 export * from './patterns.ts';
 export * from './routes.ts';

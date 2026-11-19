@@ -18,6 +18,7 @@
     "@reskin/adapters": "workspace:*",
     "@reskin/brand": "workspace:*",
     "@reskin/compiler": "workspace:*",
+    "@reskin/palettes": "workspace:*",
     "@reskin/schema": "workspace:*",
     "@reskin/templates": "workspace:*",
     "react": "19.3.1",

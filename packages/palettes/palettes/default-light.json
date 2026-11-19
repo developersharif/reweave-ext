@@ -1,0 +1,56 @@
+{
+  "$schema": "../../schema/json/palette.v1.json",
+  "schemaVersion": 1,
+  "id": "reskin/default-light",
+  "name": "Default Light",
+  "version": "1.0.0",
+  "license": "MIT",
+  "tokens": {
+    "color": {
+      "bg": {
+        "$type": "color",
+        "$value": "#fafafa"
+      },
+      "surface": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "surface-2": {
+        "$type": "color",
+        "$value": "#efeff2"
+      },
+      "text": {
+        "$type": "color",
+        "$value": "#16161a"
+      },
+      "text-muted": {
+        "$type": "color",
+        "$value": "#5c5c66"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "#2f6fde"
+      },
+      "accent-text": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "border": {
+        "$type": "color",
+        "$value": "#dedee5"
+      },
+      "link": {
+        "$type": "color",
+        "$value": "#1f5fd1"
+      },
+      "danger": {
+        "$type": "color",
+        "$value": "#c8243c"
+      },
+      "success": {
+        "$type": "color",
+        "$value": "#2e7d32"
+      }
+    }
+  }
+}

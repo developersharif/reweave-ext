@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schema/json/template.v1.json",
+  "schemaVersion": 1,
+  "id": "reskin/compact-youtube",
+  "name": "Compact YouTube",
+  "summary": "More videos on screen: choose how many per row, with tighter spacing.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": [{ "handle": "reskin" }],
+  "category": "compact",
+  "tags": ["compact", "density", "grid"],
+  "targets": [
+    {
+      "adapter": "youtube",
+      "adapterRange": "^1.1.0",
+      "styles": [{ "file": "styles/base.css" }],
+      "hide": [
+        { "component": "chip-bar", "when": "hideChips" },
+        { "component": "shorts-shelf", "when": "hideShorts" },
+        { "component": "shorts-card", "when": "hideShorts" }
+      ]
+    }
+  ],
+  "tokens": { "consumes": "standard/v1" },
+  "settings": [
+    {
+      "id": "perRow",
+      "type": "range",
+      "label": "Videos per row",
+      "description": "On the home feed, subscriptions and channel pages.",
+      "min": 3,
+      "max": 8,
+      "step": 1,
+      "default": 5
+    },
+    { "id": "hideChips", "type": "boolean", "label": "Hide topic chips", "default": false },
+    { "id": "hideShorts", "type": "boolean", "label": "Hide Shorts", "default": false }
+  ],
+  "variants": [{ "id": "dense", "label": "Dense", "settings": { "perRow": 7, "hideChips": true } }],
+  "previews": [
+    { "file": "previews/cover.jpg", "alt": "A channel's videos in a denser grid", "role": "cover" },
+    { "file": "previews/before.jpg", "alt": "Before: YouTube's default grid", "route": "channel" },
+    { "file": "previews/after.jpg", "alt": "After: more videos per row", "route": "channel" }
+  ]
+}

@@ -39,7 +39,8 @@ apps/web              Static marketplace site (M7)
 packages/schema       Manifest types, validation, JSON Schema
 packages/compiler     CSS sanitizer + authoring-dialect compiler + CLI
 packages/adapters     Site adapters (youtube, reddit, x) + fixture tests
-packages/templates    Curated templates and palettes bundled with the extension
+packages/templates    Curated templates bundled with the extension (with previews)
+packages/palettes     Colour palettes bundled with the extension (DTCG tokens)
 packages/brand        Product name and URLs (single rename point)
 packages/test-fixtures  Structure-only DOM snapshots for tests
 ```
@@ -50,7 +51,7 @@ packages/test-fixtures  Structure-only DOM snapshots for tests
 pnpm install     # Node ≥ 22, pnpm 12
 pnpm dev         # Chrome dev build with auto-reload (WXT)
 pnpm check       # typecheck + lint + unit tests + Chrome/Firefox builds + manifest guard
-pnpm test:e2e    # Playwright against the built extension (run `pnpm build` first)
+pnpm test:e2e    # builds the e2e extension, then runs Playwright against fixture-backed youtube.com
 ```
 
 To load the extension manually: run `pnpm build`, open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and choose `apps/extension/.output/chrome-mv3`.

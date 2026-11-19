@@ -68,8 +68,10 @@ export function resolveTokens(
   variant: Variant | undefined,
   palette: TokenMap | undefined,
   overrides: TokenMap | undefined,
-): { css: Record<TokenName, string>; diagnostics: Diagnostic[] } {
+): { css: Record<TokenName, string>; set: ReadonlySet<TokenName>; diagnostics: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
+  /** Tokens given a value by the template, a variant, the palette or an override. */
+  const set = new Set<TokenName>();
   const css = Object.fromEntries(
     Object.entries(STANDARD_TOKENS).map(([name, t]) => [name, String(t.default)]),
   ) as Record<TokenName, string>;
@@ -83,8 +85,10 @@ export function resolveTokens(
   for (const [source, layer] of layers) {
     for (const [name, value] of Object.entries(layer ?? {})) {
       const cssValue = isTokenName(name) ? tokenValueToCss(name, value) : null;
-      if (isTokenName(name) && cssValue !== null) css[name] = cssValue;
-      else
+      if (isTokenName(name) && cssValue !== null) {
+        css[name] = cssValue;
+        set.add(name);
+      } else
         diagnostics.push(
           diag(CODES.TOKEN_VALUE_INVALID, 'warning', `Ignoring invalid ${source} token "${name}"`, {
             path: `tokens.${name}`,
@@ -92,7 +96,39 @@ export function resolveTokens(
         );
     }
   }
-  return { css, diagnostics };
+  return { css, set, diagnostics };
+}
+
+/**
+ * The site-theme rule (D-033), emitted for templates that consume `standard/v1`:
+ * - a token something set is pushed to the site: `--site-var: var(--rk-token) !important`;
+ * - any other token with a `follow` entry reads the site's own value instead, falling
+ *   back to its standard default: `--rk-token: var(--site-var, <default>)`.
+ * So unset tokens match the site's light/dark theme, and if the site renames its
+ * variables the page keeps its own (readable) colours.
+ */
+export function themeDeclarations(
+  theme: {
+    follow?: Readonly<Record<string, string>>;
+    bind?: Readonly<Record<string, readonly string[]>>;
+  },
+  tokens: Readonly<Record<TokenName, string>>,
+  set: ReadonlySet<TokenName>,
+): { decls: string[]; written: string[] } {
+  const decls: string[] = [];
+  const written: string[] = [];
+  for (const name of Object.keys(STANDARD_TOKENS) as TokenName[]) {
+    if (set.has(name)) {
+      for (const siteVar of theme.bind?.[name] ?? []) {
+        decls.push(`${siteVar}:var(${tokenCssVar(name)})!important`);
+        written.push(siteVar);
+      }
+    } else {
+      const siteVar = theme.follow?.[name];
+      if (siteVar) decls.push(`${tokenCssVar(name)}:var(${siteVar},${tokens[name]})`);
+    }
+  }
+  return { decls, written };
 }
 
 /** The generated `:root` declarations: all standard tokens + value-type settings. */

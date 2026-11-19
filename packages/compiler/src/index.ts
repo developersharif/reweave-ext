@@ -2,6 +2,13 @@
 export const PACKAGE_NAME = '@reskin/compiler';
 
 export {
+  BUNDLE_MIME,
+  type BundleReader,
+  type LoadedBundle,
+  loadBundle,
+  mimeFor,
+} from './bundle.ts';
+export {
   type CompiledGroup,
   type CompiledTemplate,
   type CompileInput,
@@ -21,4 +28,5 @@ export {
   resolveTokens,
   rootDeclarations,
   type TokenMap,
+  themeDeclarations,
 } from './values.ts';

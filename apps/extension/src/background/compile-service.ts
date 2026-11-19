@@ -45,6 +45,8 @@ export async function recompile(reg: Registry, adapterId: string): Promise<Compi
     };
   }
   const settings = validUserSettings(reg, site.templateId, await getSettings(site.templateId));
+  // A palette that was removed falls back to the template's own colours.
+  const palette = site.paletteId ? reg.palettes.get(site.paletteId)?.tokens : undefined;
   const result = compileTemplate({
     manifest: template.manifest,
     sources: template.sources,
@@ -52,6 +54,7 @@ export async function recompile(reg: Registry, adapterId: string): Promise<Compi
     adapter,
     variant: site.variantId,
     settings,
+    ...(palette ? { palette } : {}),
   });
   if (!result.ok || !result.output) {
     await removeCompiled(adapterId);
