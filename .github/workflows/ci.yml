@@ -44,6 +44,8 @@ jobs:
         with:
           name: extension-zips
           path: apps/extension/.output/*.zip
+          # WXT writes to `.output/`; upload-artifact skips hidden paths unless told otherwise
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
 
