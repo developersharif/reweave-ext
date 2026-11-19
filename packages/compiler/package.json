@@ -7,7 +7,19 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test && tsc --noEmit -p cli",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@reskin/schema": "workspace:*",
+    "css-tree": "3.2.1"
+  },
+  "devDependencies": {
+    "@types/css-tree": "3.2.0",
+    "@reskin/test-fixtures": "workspace:*",
+    "@types/node": "^24"
+  },
+  "bin": {
+    "reskin": "./bin/reskin.js"
   }
 }

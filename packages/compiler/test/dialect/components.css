@@ -1,0 +1,13 @@
+:--video-card {
+  color: red;
+}
+:--video-card .title,
+:--masthead:hover {
+  color: blue;
+}
+:not(:--masthead) > :--video-card::before {
+  content: "";
+}
+:--primary-column:has(> :--video-title) {
+  gap: 1px;
+}

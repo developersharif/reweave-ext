@@ -1,0 +1,5 @@
+/* expect: PROTECTED_COMPONENT_STYLED */
+:--consent-dialog {
+  position: fixed;
+  left: -99999px;
+}

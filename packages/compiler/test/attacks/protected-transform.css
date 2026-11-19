@@ -1,0 +1,4 @@
+/* expect: PROTECTED_COMPONENT_STYLED */
+:--consent-dialog {
+  transform: scale(0);
+}

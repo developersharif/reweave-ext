@@ -1,0 +1,4 @@
+/* expect: CSS_HAS_TOO_DEEP */
+:root:has(.a:has(.b:has(.c:has(.d:has(.e))))) {
+  color: red;
+}

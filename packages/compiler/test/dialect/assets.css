@@ -1,0 +1,7 @@
+@font-face {
+  font-family: "Inter";
+  src: asset(inter) format("woff2");
+}
+:--masthead {
+  font-family: "Inter", sans-serif;
+}

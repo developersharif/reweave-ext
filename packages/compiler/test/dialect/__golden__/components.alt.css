@@ -1,0 +1,4 @@
+:is(ytd-rich-item-renderer,ytd-video-renderer){color:red}
+:is(ytd-rich-item-renderer,ytd-video-renderer) .title,:is(ytd-masthead):hover{color:blue}
+:not(:is(ytd-masthead))>:is(ytd-rich-item-renderer,ytd-video-renderer)::before{content:""}
+:is(#primary.ytd-watch-flexy):has(>:is(ytd-watch-metadata h1)){gap:1px}

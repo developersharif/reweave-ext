@@ -1,0 +1,5 @@
+/* expect: CSS_ESCAPE_FORBIDDEN
+   Browsers decode u\72l( to url(; the parser sees an unknown function. */
+.a {
+  background: u\72l(https://evil.test/b);
+}

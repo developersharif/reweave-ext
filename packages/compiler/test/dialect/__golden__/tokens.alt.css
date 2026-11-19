@@ -1,0 +1,2 @@
+:is(ytd-masthead){background:var(--rk-color-bg);border-radius:var(--rk-radius-md);color:var(--rk-color-text-muted)}
+:is(ytd-rich-item-renderer,ytd-video-renderer){padding:calc(8px*var(--rk-space-scale));font-family:var(--rk-font-body)}

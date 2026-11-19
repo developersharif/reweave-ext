@@ -37,7 +37,7 @@
 | Package | Runs in | Responsibility | Milestone |
 |---|---|---|---|
 | `packages/schema` | everywhere | Types + runtime validation for template/adapter/palette manifests; JSON Schema generation; error codes | M1 |
-| `packages/compiler` | SW, Studio, CI, Worker | Parse (css-tree), sanitize (allowlist), resolve dialect (`:--x`, `token()`, `@setting`, `setting()`), emit per-route-group CSS; also a CLI (`reskin validate/bundle`) | M1 |
+| `packages/compiler` | SW, Studio, CI, Worker | Parse (css-tree), sanitize (allowlist), resolve dialect (`:--x`, `token()`, `@setting`, `setting()`), emit per-route-group CSS; also a CLI (`reskin validate`/`compile` in M1; `bundle` in M7) | M1 |
 | `packages/adapters` | bundled + remote data | `youtube`, `reddit`, `x` adapter JSON + fixture-based tests | M2, M4 |
 | `packages/templates` | bundled | Curated templates + palettes shipped in the extension | M3 |
 | `packages/brand` | UI | Product name, tagline, URLs, colors (single rename point, D-010) | M0 |
@@ -70,8 +70,8 @@ Dependency rule: `schema` ← `compiler` ← (`extension`, `api`, CLI). Adapters
 |---|---|---|
 | Extension framework | WXT (TypeScript) | D-005, version verified in T-0.2 |
 | UI | React + TS (popup/options/studio); vanilla TS content script | D-007 (Proposed) |
-| CSS parsing | css-tree (validate in T-1.2; alternatives PostCSS, lightningcss-wasm) | M1 spike |
-| Schema validation | Zod 4 or Valibot — pick smaller runtime in T-1.1 | M1 spike |
+| CSS parsing | css-tree 3.2.1, subpath imports (D-026, technical-research §9) | Decided (M1) |
+| Schema validation | Valibot 1.5.0 (D-025) | Decided (M1) |
 | Editor | CodeMirror 6 | M5 |
 | Tests | Vitest; Playwright (persistent Chromium + unpacked extension + request interception) | D-020 |
 | Backend | Cloudflare Workers (Hono) + R2; D1 at M9 | D-008 |

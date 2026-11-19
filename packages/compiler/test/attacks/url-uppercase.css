@@ -1,0 +1,5 @@
+/* expect: CSS_URL_FORBIDDEN
+   Function names are case-insensitive. */
+.a {
+  background: URL(https://evil.test/c);
+}

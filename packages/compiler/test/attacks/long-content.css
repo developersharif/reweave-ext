@@ -1,0 +1,5 @@
+/* expect: CSS_TEXT_CONTENT (review)
+   UI redress: fake support number injected next to the masthead. */
+:--masthead::after {
+  content: "Call YouTube support: +1-800-555-0100";
+}

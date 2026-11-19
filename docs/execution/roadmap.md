@@ -38,6 +38,7 @@ Critical path to a public beta: **M0 → M1 → M2 → M3 → M6** (YouTube-only
 - **Acceptance:** spec example in `template-schema.md` validates and compiles; every attack fixture in `security-model.md` §3 is rejected or flagged with the right code; 256 KB template compiles in < 100 ms in Node; compiler runs in a service-worker-like environment (no DOM APIs).
 - **Testing:** Vitest golden files (dialect → CSS), attack fixtures, invalid-manifest fixtures, perf test.
 - **Risks:** css-tree can't parse the dialect cleanly → fallback syntax (`:component(name)`); bundle size too large for SW → evaluate alternatives.
+- **Outcome (2026-11-19):** done. `:--name` works; tokens became `token(group-name)`; no CSS nesting in v1 (D-026). css-tree is ~23.5 KB gzip via subpath imports.
 
 ## M2 — Extension runtime + YouTube adapter + popup (≈7–10 days)
 

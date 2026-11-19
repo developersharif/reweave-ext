@@ -1,0 +1,19 @@
+@font-face {
+  font-family: "Inter";
+  src: asset(inter) format("woff2");
+  font-display: swap;
+}
+
+:--masthead {
+  background: token(color-bg);
+  border-bottom: 1px solid token(color-border);
+}
+
+:--video-card {
+  border-radius: token(radius-md);
+  transition: transform token(motion-duration);
+}
+
+:--video-card:hover {
+  transform: translateY(-2px);
+}

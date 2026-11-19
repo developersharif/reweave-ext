@@ -1,0 +1,8 @@
+/* expect: CSS_URL_FORBIDDEN
+   URLs hidden in a custom property and used later through var(). */
+:root {
+  --x: url(https://evil.test/v);
+}
+.a {
+  background: var(--x);
+}

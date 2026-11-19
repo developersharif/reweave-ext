@@ -1,0 +1,8 @@
+:--primary-column { max-width: setting(maxWidth); margin-inline: auto; }
+:--video-title    { font: 600 1.4rem/1.3 token(font-body); color: token(color-text); }
+:--related-sidebar { opacity: .6; transition: opacity .2s; }
+:--related-sidebar:hover { opacity: 1; }
+
+@setting density = compact {
+  :--comment { padding-block: 4px; }
+}

@@ -1,0 +1,5 @@
+/* expect: CSS_FUNCTION_FORBIDDEN
+   image-set() takes URLs as plain strings, so a Url-node check alone misses it. */
+.a {
+  background-image: image-set("https://evil.test/d.png" 1x);
+}

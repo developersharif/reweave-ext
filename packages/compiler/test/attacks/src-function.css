@@ -1,0 +1,5 @@
+/* expect: CSS_FUNCTION_FORBIDDEN
+   CSS Values 5 src() accepts a string URL. */
+.a {
+  background-image: src("https://evil.test/e.png");
+}

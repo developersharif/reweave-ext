@@ -1,0 +1,42 @@
+:--primary-column {
+  max-width: setting(maxWidth);
+}
+
+@setting hideShorts {
+  :--shorts-shelf {
+    opacity: 0.5;
+  }
+}
+
+@setting !hideShorts {
+  :--shorts-shelf {
+    outline: 1px solid;
+  }
+}
+
+@setting density = compact {
+  :--comment {
+    padding-block: 4px;
+  }
+}
+
+@setting density = comfortable {
+  :--comment {
+    padding-block: 12px;
+  }
+}
+
+@media (min-width: 1000px) {
+  @setting hideHomeFeed {
+    :--video-card {
+      display: none;
+    }
+  }
+  @setting density = comfortable {
+    @setting hideShorts {
+      :--masthead {
+        height: 48px;
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "test/dusk",
+  "name": "Dusk",
+  "version": "1.0.0",
+  "license": "CC0-1.0",
+  "tokens": {
+    "color": {
+      "bg": {
+        "$type": "color",
+        "$value": { "colorSpace": "srgb", "components": [0.1, 0.1, 0.18], "hex": "#1a1a2e" }
+      },
+      "text": { "$value": { "colorSpace": "oklch", "components": [0.93, 0.02, 280] } },
+      "accent": { "$value": "#e94560" }
+    },
+    "font": {
+      "body": {
+        "$type": "fontFamily",
+        "$value": ["Atkinson Hyperlegible", "system-ui", "sans-serif"]
+      }
+    },
+    "radius": {
+      "md": { "$type": "dimension", "$value": { "value": 12, "unit": "px" } }
+    },
+    "motion": {
+      "duration": { "$type": "duration", "$value": { "value": 200, "unit": "ms" } }
+    }
+  }
+}

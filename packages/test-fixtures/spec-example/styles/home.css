@@ -1,0 +1,7 @@
+:--video-card {
+  background: token(color-surface);
+}
+
+@setting density = compact {
+  :--video-card { padding: 4px; }
+}

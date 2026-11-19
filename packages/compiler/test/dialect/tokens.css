@@ -1,0 +1,9 @@
+:--masthead {
+  background: token(color-bg);
+  border-radius: token(radius-md);
+  color: token(color-text-muted);
+}
+:--video-card {
+  padding: calc(8px * token(space-scale));
+  font-family: token(font-body);
+}

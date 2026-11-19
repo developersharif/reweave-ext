@@ -1,0 +1,5 @@
+/* expect: PROTECTED_COMPONENT_STYLED
+   Hiding the buttons inside the dialog is still tampering with it. */
+:--consent-dialog button {
+  opacity: 0;
+}

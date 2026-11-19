@@ -101,7 +101,8 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Decision:** Vitest for schema/compiler/runtime units; Playwright with a persistent Chromium context loading the unpacked extension for e2e against **local DOM fixtures** (saved, sanitized snapshots of target pages). Live-site canaries run separately on a schedule (M8) and never gate PRs.
 
 ### D-021 — Route groups as separate adopted stylesheets; settings compiled in
-- **Status:** Proposed · 2026-11-19 (validate in T-1.6 and T-2.1)
+- **Status:** Accepted for the compiler output · 2026-11-19 (T-1.6). The injection half is still validated in T-2.1.
+- **Output contract (T-1.6):** `{ engineVersion, templateId, templateVersion, adapterId, adapterVersion, hash, groups: [{ routes, css }], sensitiveRoutes, routeTable, rawSelectors, components, assets }`. `groups[0]` covers all target routes and starts with the generated `:root` rule; other groups follow in manifest order; hide rules are appended to their route's group. `hash` is a fast cache key (cyrb53), not an integrity check.
 - **Decision:** Each route-scoped style group compiles to its own `CSSStyleSheet` in `document.adoptedStyleSheets`; navigation toggles `sheet.disabled`. Settings and tokens are compiled into the CSS (blocks included/excluded; values as `:root` custom properties), so the page's DOM is never annotated.
 - **Why:** No selector rewriting for routes, no attributes the page can strip, no DOM markers for fingerprinting, O(1) work on navigation.
 - **Revisit if:** adopted sheets prove unreliable on a target site (fallback: `<style>` kept last; extension-architecture §3.2).
@@ -121,3 +122,26 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Decision:** `scripts/check-manifest.mjs` fails `pnpm check` if a production manifest has a permission other than `storage`/`scripting`, an unlisted optional host, `host_permissions`, `web_accessible_resources`, `externally_connectable`, static `content_scripts`, or a custom CSP.
 - **Why:** it enforces AGENTS.md non-negotiables 5 and 7 mechanically. It was negative-tested against a deliberately bad manifest.
 - **Changing it:** extend the allowlists in the same PR as the decision that requires it, e.g. adding Reddit/X hosts in M4 or `activeTab` in M5.
+
+### D-025 — Valibot for schemas
+- **Status:** Accepted · 2026-11-19 (T-1.1)
+- **Decision:** `valibot@1.5.0` in `packages/schema`; `@valibot/to-json-schema@1.8.0` generates the editor JSON Schemas.
+- **Why:** for the same manifest schema, 2.5 KB gzip vs 7.6 KB (Zod Mini) and 92.7 KB (Zod 4) (technical-research §9). The schema ships in the service worker and later in the content-script boundary checks, so size matters more than ecosystem.
+- **Revisit if:** Valibot's JSON Schema output blocks editor features we need.
+
+### D-026 — Authoring dialect syntax v1
+- **Status:** Accepted · 2026-11-19 (T-1.2)
+- **Decision:** keep `:--component` (no `:component()` fallback). Tokens are written `token(group-name)` in CSS (dotted names stay in JSON). `@setting id`, `@setting !id`, `@setting id = value` are the only preludes. No CSS nesting in v1. No components inside `@scope` preludes in v1.
+- **Why:** css-tree 3.2.1 parses `:--name` everywhere, but rejects dots inside function arguments and doesn't support nesting (technical-research §9). A hyphenated token mirrors the compiled `var(--rk-group-name)`.
+- **Revisit:** nesting when css-tree supports it (T-5.9).
+
+### D-027 — `.ts` extensions in relative imports; Node runs TypeScript directly
+- **Status:** Accepted · 2026-11-19
+- **Decision:** `tsconfig.base.json` sets `allowImportingTsExtensions` and `erasableSyntaxOnly`. Packages import relatives with `.ts` extensions, so Node ≥ 22.18/24 runs the CLI (`packages/compiler/bin/reskin.js`) and scripts with built-in type stripping. No build step, no `tsx` dependency.
+- **Constraints:** no `enum`, `namespace` or parameter properties (TypeScript syntax that isn't erasable). Node prints an `ExperimentalWarning`; scripts pass `--disable-warning=ExperimentalWarning`.
+
+### D-028 — Protected components can't be styled at all
+- **Status:** Accepted · 2026-11-19 (T-1.4)
+- **Decision:** any selector that uses a protected component (`:--consent-dialog`, `:--consent-dialog button`), or a raw selector naming one of its elements/ids/classes, is an error (`PROTECTED_COMPONENT_STYLED`). `hide` rules on protected components are errors (`PROTECTED_COMPONENT_HIDDEN`).
+- **Why:** stricter than the original list of hiding techniques in security-model T2, and simpler: there's no property list to keep up to date. Ancestor hiding and overlays need a runtime guard (T-2.9).
+
