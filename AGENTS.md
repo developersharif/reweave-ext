@@ -52,7 +52,7 @@ Break one only with a new Accepted entry in `docs/execution/decisions.md`.
 - **Errors:** validation and compile problems are `{ code, path, message, severity }` with stable `UPPER_SNAKE` codes. Tests assert codes, not messages.
 - **Messages and storage:** every runtime message and storage value has a schema in `packages/schema` and is validated at the boundary.
 - **Tests:**
-  - Vitest next to the code (`*.test.ts`).
+  - Vitest next to the code (`*.test.ts`), never inside `src/entrypoints/`.
   - Golden files for compiler output.
   - Attack fixtures for the sanitizer.
   - Adapter tests run against `packages/test-fixtures`.
@@ -74,4 +74,22 @@ Break one only with a new Accepted entry in `docs/execution/decisions.md`.
 
 ## 6. Commands
 
-To be filled in by T-0.1 and T-0.2. Until then, see the planned commands in `README.md`.
+Requirements: Node ≥ 22 (`.nvmrc` pins 24) and pnpm 12 (`packageManager` field).
+
+| Command | What it does |
+|---|---|
+| `pnpm install` | Installs the workspace. Also runs `wxt prepare`, which generates `apps/extension/.wxt/` types |
+| `pnpm dev` | WXT dev mode for Chrome with auto-reload. Dev builds add `tabs`/`scripting`; that's expected |
+| `pnpm --filter @reskin/extension dev:firefox` | Firefox dev mode |
+| `pnpm check` | **Run before every commit.** typecheck → Biome lint → unit tests → Chrome + Firefox builds → `check:manifest` guard |
+| `pnpm test` | Vitest in every package (extension tests use `WxtVitest` + `fakeBrowser`) |
+| `pnpm test:e2e` | Playwright e2e against the built extension. Run `pnpm build` first; the first time also run `pnpm --filter @reskin/extension exec playwright install chromium` |
+| `pnpm format` | Biome auto-fix (format + organize imports) |
+| `pnpm --filter @reskin/extension zip` | Store-ready zips in `apps/extension/.output/` |
+
+## 7. Layout notes learned in M0
+
+- `apps/extension/src/entrypoints/` contains **only** WXT entrypoints. Any file there, including tests, is treated as an entrypoint. Keep entrypoints thin: put logic in `src/<area>/` modules with tests beside them.
+- `apps/extension/e2e/` has its own tsconfig with Node types. Extension source must not see Node types.
+- Workspace packages export TypeScript source directly (`"exports": { ".": "./src/index.ts" }`). There is no package build step; Vite, Vitest and tsc consume the source.
+- TypeScript is pinned to 6.0.x (D-022). Don't bump it to 7.x.

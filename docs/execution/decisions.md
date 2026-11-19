@@ -38,7 +38,7 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Why:** Validates the riskiest assumption (do people keep a redesign installed?) at near-zero infra and compliance cost.
 
 ### D-007 — UI: React + TypeScript for extension pages; content script is framework-free TS
-- **Status:** Proposed · 2026-11-19 (founder may switch to Vue; low-cost to change before M2)
+- **Status:** Accepted · 2026-11-19 (founder confirmed React)
 - **Why:** Popup/options/creator panel are modest UIs; React has the largest ecosystem and the most reliable AI-assisted coding output, and can be shared with a future React Router web app. The content script must stay tiny and never load a framework.
 - **Revisit if:** founder is materially faster in Vue.
 
@@ -52,7 +52,7 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Revisit if:** compatibility guarantees exist and creators demand paid distribution.
 
 ### D-010 — Working brand "Reweave"; code name `reskin`
-- **Status:** Proposed · 2026-11-19 (trademark/conflict clearance incomplete — see naming-research.md)
+- **Status:** Proposed · 2026-11-19. The founder named the repo `reweave-ext`, so Reweave is used as the working brand. Trademark/conflict clearance is still incomplete (naming-research.md)
 - **Decision:** User-facing strings use the working brand, defined in **one** place (`packages/brand`). Code identifiers, package scope (`@reskin/*`) and internal CSS prefix never contain the brand, so a rename touches one package and the store listing.
 - **Revisit:** before the CWS public listing (T-6.6 name clearance).
 
@@ -80,7 +80,7 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Why:** Taps existing Stylus/USw/Catppuccin supply; competitor-analysis §10.1.
 
 ### D-016 — Open-source extension client and adapters (MIT); backend private initially
-- **Status:** Proposed · 2026-11-19
+- **Status:** Accepted · 2026-11-19. The repo is public at github.com/developersharif/reweave-ext with an MIT `LICENSE`. The founder can change the license before the first release
 - **Why:** Trust positioning ("we don't collect your browsing data — read the code"), community adapter fixes via PR. Backend can open later.
 
 ### D-017 — Telemetry: none by default
@@ -105,3 +105,19 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Decision:** Each route-scoped style group compiles to its own `CSSStyleSheet` in `document.adoptedStyleSheets`; navigation toggles `sheet.disabled`. Settings and tokens are compiled into the CSS (blocks included/excluded; values as `:root` custom properties), so the page's DOM is never annotated.
 - **Why:** No selector rewriting for routes, no attributes the page can strip, no DOM markers for fingerprinting, O(1) work on navigation.
 - **Revisit if:** adopted sheets prove unreliable on a target site (fallback: `<style>` kept last; extension-architecture §3.2).
+
+### D-022 — Pin TypeScript 6.0.x (not 7.x)
+- **Status:** Accepted · 2026-11-19
+- **Decision:** `typescript@~6.0.3` workspace-wide.
+- **Why:** `typescript@7.0.2` (npm `latest`) is the native compiler. Its package exports only a version stub plus `unstable/*` APIs, while WXT and other tools still expect the classic JS compiler API (`peerDependencies: typescript >=5.4`).
+- **Revisit when:** WXT and Vitest document TypeScript 7 support.
+
+### D-023 — Biome for lint + format
+- **Status:** Accepted · 2026-11-19
+- **Why:** a single fast tool with no TypeScript compiler-API dependency, covering lint, format and import sorting. Config is in `biome.json`; run `pnpm format` to auto-fix.
+
+### D-024 — Built-manifest guard in CI
+- **Status:** Accepted · 2026-11-19
+- **Decision:** `scripts/check-manifest.mjs` fails `pnpm check` if a production manifest has a permission other than `storage`/`scripting`, an unlisted optional host, `host_permissions`, `web_accessible_resources`, `externally_connectable`, static `content_scripts`, or a custom CSP.
+- **Why:** it enforces AGENTS.md non-negotiables 5 and 7 mechanically. It was negative-tested against a deliberately bad manifest.
+- **Changing it:** extend the allowlists in the same PR as the decision that requires it, e.g. adding Reddit/X hosts in M4 or `activeTab` in M5.

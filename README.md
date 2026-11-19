@@ -7,7 +7,7 @@ Community-made redesigns for the sites you live on (YouTube first, then Reddit a
 - Templates are compiled on your device against platform-maintained **site adapters**, so a single adapter fix repairs every template that uses it.
 - Zero telemetry by default. Per-site permissions only.
 
-> **Status (2026-11-19): planning complete, no code yet.** Next step: M0 / T-0.1. See [`docs/execution/session-handover.md`](docs/execution/session-handover.md).
+> **Status (2026-11-19): M0 foundations done** (monorepo, WXT + React extension shell, CI, manifest guard). Next: M1, the template engine. See [`docs/execution/session-handover.md`](docs/execution/session-handover.md).
 
 ## Why this exists, in one paragraph
 
@@ -46,16 +46,17 @@ packages/test-fixtures  Structure-only DOM snapshots for tests
 
 ## Development
 
-Commands are added in M0 (T-0.1, T-0.2). The intended commands:
-
 ```sh
-pnpm install
-pnpm dev        # WXT dev build with auto-reload in Chrome
-pnpm check      # typecheck + lint + test + build
-pnpm test
-pnpm build      # Chrome + Firefox zips
+pnpm install     # Node ≥ 22, pnpm 12
+pnpm dev         # Chrome dev build with auto-reload (WXT)
+pnpm check       # typecheck + lint + unit tests + Chrome/Firefox builds + manifest guard
+pnpm test:e2e    # Playwright against the built extension (run `pnpm build` first)
 ```
+
+To load the extension manually: run `pnpm build`, open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and choose `apps/extension/.output/chrome-mv3`.
+
+More commands are listed in [`AGENTS.md`](AGENTS.md) §6.
 
 ## License
 
-Planned: MIT for the extension, adapters and schema (D-016, Proposed).
+[MIT](LICENSE).
