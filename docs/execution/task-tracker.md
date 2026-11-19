@@ -24,14 +24,14 @@ Spike tasks (🔬) produce a **written result** in the named doc before dependen
 
 | ID | Task | Size | Deps | Acceptance | Status |
 |---|---|---|---|---|---|
-| T-1.1 🔬 | Pick validation lib (Zod 4 vs Valibot) by measured SW bundle size + DX; implement Template/Adapter/Palette schemas per `template-schema.md` §3, §6, §11; error code enum; JSON Schema generation script | L | T-0.6 | Spec example valid; ≥ 20 invalid fixtures fail with expected `{code,path}`; decision recorded | todo |
-| T-1.2 🔬 | css-tree spike: parse + regenerate `:--name`, `token(x.y)`, `@setting id { }`, `@setting id = v { }`, `setting(id)`, `asset(id)`; measure bundle size; decide dialect syntax (fallback `:component(name)`) | M | T-0.6 | Round-trip tests pass; decision in decisions.md | todo |
-| T-1.3 | Sanitizer: allowlist walk (§4.1 at-rules/properties/values, `url()` rules, `content` length flag, selector + `:has()` limits, size limits) returning `errors[]`, `warnings[]`, `reviewFlags[]` | L | T-1.2 | All attack fixtures (T-1.3a) caught; benign corpus passes | todo |
-| T-1.3a | Attack fixtures `packages/compiler/test/attacks/`: attribute-selector exfil, `@import` beacon, font `unicode-range`, external `image-set`, authored `data:` URL, long `content` overlay, hidden protected component (each hiding technique), `pointer-events` decoy, deep `:has()` | M | T-0.6 | ≥ 15 fixtures, each with expected code | todo |
-| T-1.4 | Dialect resolver: components → `:is(<adapter selectors>)`; unknown component error; `hide` rules; protected-component checks; `rawSelectors` detection | L | T-1.1, T-1.2 | Golden-file tests for each construct | todo |
-| T-1.5 | Tokens + settings: resolution order (schema §6), generated `:root` block, `@setting` include/exclude, `setting()` values with clamping/validation | M | T-1.4 | Golden tests; palette override test | todo |
-| T-1.6 | Output format + route groups: `{ hash, groups:[{routes,css}], sensitiveRoutes, routeTable, adapterVersion }`; perf test (256 KB < 100 ms); confirm D-021 | M | T-1.4, T-1.5 | Perf test green; D-021 → Accepted or revised | todo |
-| T-1.7 | CLI `reskin validate <dir>` / `reskin compile <dir> --adapter <path>` (pretty diagnostics, JSON output flag) | S | T-1.6 | Works on the spec example directory | todo |
+| T-1.1 🔬 | Pick validation lib (Zod 4 vs Valibot) by measured SW bundle size + DX; implement Template/Adapter/Palette schemas per `template-schema.md` §3, §6, §11; error code enum; JSON Schema generation script | L | T-0.6 | Spec example valid; ≥ 20 invalid fixtures fail with expected `{code,path}`; decision recorded | done (2026-11-19) |
+| T-1.2 🔬 | css-tree spike: parse + regenerate `:--name`, `token(x.y)` (became `token(x-y)`, D-026), `@setting id { }`, `@setting id = v { }`, `setting(id)`, `asset(id)`; measure bundle size; decide dialect syntax (fallback `:component(name)`) | M | T-0.6 | Round-trip tests pass; decision in decisions.md | done (2026-11-19) |
+| T-1.3 | Sanitizer: allowlist walk (§4.1 at-rules/properties/values, `url()` rules, `content` length flag, selector + `:has()` limits, size limits) returning `errors[]`, `warnings[]`, `reviewFlags[]` | L | T-1.2 | All attack fixtures (T-1.3a) caught; benign corpus passes | done (2026-11-19) |
+| T-1.3a | Attack fixtures `packages/compiler/test/attacks/`: attribute-selector exfil, `@import` beacon, font `unicode-range`, external `image-set`, authored `data:` URL, long `content` overlay, hidden protected component (each hiding technique), `pointer-events` decoy, deep `:has()` | M | T-0.6 | ≥ 15 fixtures, each with expected code | done (2026-11-19) |
+| T-1.4 | Dialect resolver: components → `:is(<adapter selectors>)`; unknown component error; `hide` rules; protected-component checks; `rawSelectors` detection | L | T-1.1, T-1.2 | Golden-file tests for each construct | done (2026-11-19) |
+| T-1.5 | Tokens + settings: resolution order (schema §6), generated `:root` block, `@setting` include/exclude, `setting()` values with clamping/validation | M | T-1.4 | Golden tests; palette override test | done (2026-11-19) |
+| T-1.6 | Output format + route groups: `{ hash, groups:[{routes,css}], sensitiveRoutes, routeTable, adapterVersion }`; perf test (256 KB < 100 ms); confirm D-021 | M | T-1.4, T-1.5 | Perf test green; D-021 → Accepted or revised | done (2026-11-19) |
+| T-1.7 | CLI `reskin validate <dir>` / `reskin compile <dir> --adapter <path>` (pretty diagnostics, JSON output flag) | S | T-1.6 | Works on the spec example directory | done (2026-11-19) |
 
 ## M2 — Extension runtime + YouTube
 
@@ -45,6 +45,8 @@ Spike tasks (🔬) produce a **written result** in the named doc before dependen
 | T-2.6 | Content script: boot (storage read → sheets), route toggling, `storage.onChanged` live update, sensitive routes off, global pause | M | T-2.1, T-2.2, T-2.5 | e2e: SPA nav switches route styles; setting change applies without reload | todo |
 | T-2.7 | Popup v1 (React): site detection states (supported/granted, supported/not granted, unsupported, sensitive), enable (permission request), on/off, template switch incl. "Original site", settings controls generated from manifest | L | T-2.5 | Matches `user-flows.md` §3 wireframe (minus palette/report) | todo |
 | T-2.8 | Dev template "Focus YouTube" (hide Shorts, optional hide home feed, width range) | S | T-2.3 | Used by e2e tests | todo |
+| T-2.9 | Runtime protected-component guard: while any adapter `protected` component is present and visible (consent/security UI), disable the template's sheets; re-enable when it's gone. Catches what static checks can't (hiding an ancestor, overlays) | M | T-2.6 | e2e: fixture with the consent dialog shows the original site until the dialog closes | todo |
+| T-2.10 | Wire the compiler into the service worker (`compile-service`): bundle-size check that css-tree stays on subpath imports (fail CI if the SW grows > 60 KB gzip) | S | T-2.5 | Size guard in `pnpm check` | todo |
 
 ## M3 — Templates, palettes, health, library
 
@@ -80,6 +82,7 @@ Spike tasks (🔬) produce a **written result** in the named doc before dependen
 | T-5.6 | Manifest editor (JSON with schema validation), save local, export/import `.zip` | M | T-5.4 | Round-trip zip equals source | todo |
 | T-5.7 | UserCSS import (metadata block, `@var` → settings, `@-moz-document` → target) as local raw-selector template; UserCSS export (compiled) | L | T-1.6 | A Catppuccin-style YouTube UserCSS imports and applies | todo |
 | T-5.8 | (Stretch) `activeTab` + local raw-CSS style on unsupported sites | M | T-5.4 | Behind "Labs" flag | todo |
+| T-5.9 | Revisit CSS nesting: v1 rejects nested rules because css-tree 3.2.1 can't parse them (technical-research §9). If css-tree ships nesting, allow it in the dialect and sanitizer | S | — | Decision recorded; attack fixtures still pass | todo |
 
 ## M6 — CWS beta
 

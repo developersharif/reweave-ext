@@ -1,0 +1,9 @@
+/* expect: CSS_OVERLAY (review)
+   A click-through layer drawn over a video card disguises what the click does. */
+:--video-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: transparent;
+}

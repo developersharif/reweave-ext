@@ -7,7 +7,7 @@ Community-made redesigns for the sites you live on (YouTube first, then Reddit a
 - Templates are compiled on your device against platform-maintained **site adapters**, so a single adapter fix repairs every template that uses it.
 - Zero telemetry by default. Per-site permissions only.
 
-> **Status (2026-11-19): M0 foundations done** (monorepo, WXT + React extension shell, CI, manifest guard). Next: M1, the template engine. See [`docs/execution/session-handover.md`](docs/execution/session-handover.md).
+> **Status (2026-11-19): M1 engine core done** (template/adapter/palette schemas, CSS sanitizer with 34 attack fixtures, dialect compiler, `reskin` CLI). Next: M2, the extension runtime on YouTube. See [`docs/execution/session-handover.md`](docs/execution/session-handover.md).
 
 ## Why this exists, in one paragraph
 

@@ -1,0 +1,4 @@
+/* expect: PROTECTED_COMPONENT_STYLED */
+:--consent-dialog {
+  clip-path: inset(50%);
+}

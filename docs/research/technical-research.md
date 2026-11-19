@@ -110,9 +110,10 @@ Source for all rows: Chrome extension docs via Context7. URLs are https://develo
 | Layer | Choice | Confidence | Notes |
 |---|---|---|---|
 | Extension framework | WXT 0.21.5 | High | Verified in T-0.2: builds Chrome and Firefox MV3, Vitest and Playwright work |
-| UI | React + TS | Medium | D-007 is Proposed; Vue is equally viable |
+| UI | React + TS | High | D-007 Accepted (M0) |
 | Content script | Vanilla TS | High | Size and perf budget |
-| CSS parser | css-tree | Medium | T-1.2 checks parse support for the authoring syntax and bundle size |
+| CSS parser | css-tree 3.2.1 (subpath imports) | High | T-1.2: parses the dialect; ~23.5 KB gzip in the SW; no CSS nesting (§9) |
+| Schema validation | Valibot 1.5.0 | High | T-1.1: 2.5 KB gzip for the manifest schema vs Zod 92.7 KB (§9) |
 | Backend | Workers + R2, later D1 | High for Phase A | Phase B auth library is re-verified at M9 |
 | Alternatives considered | Supabase, Firebase, PocketBase on a VPS | — | Not needed: Phase A is static files plus one Worker |
 
@@ -120,4 +121,37 @@ Source for all rows: Chrome extension docs via Context7. URLs are https://develo
 
 1. Can adapter `navigationEvents` (site-specific DOM events like `yt-navigate-finish`) be listened to from the isolated world? They are DOM events, so they should be. Confirm in T-2.2.
 2. A cheap logged-out canary for X (most pages need login). Answer by M8.
-3. Whether the compiler (css-tree) fits comfortably in the service worker bundle (T-1.2).
+3. ~~Whether the compiler (css-tree) fits comfortably in the service worker bundle (T-1.2).~~ Yes: ~23.5 KB gzip with subpath imports (§9).
+4. When css-tree supports CSS nesting, should v1.1 allow nested rules? Watch css-tree releases (T-5.9).
+
+## 9. Engine spike results (T-1.1, T-1.2, done 2026-11-19)
+
+Measured locally on 2026-11-19 (Node 24.2.0, esbuild minify, `gzip -9`).
+
+**Validation library (T-1.1, D-025).** Same template-manifest schema written three ways and bundled for the browser:
+
+| Library | Minified | Gzip |
+|---|---|---|
+| Valibot 1.5.0 | 7.1 KB | 2.5 KB |
+| Zod 4 Mini (`zod/mini` 4.6.7) | 23.0 KB | 7.6 KB |
+| Zod 4 (`zod` 4.6.7) | 454.8 KB | 92.7 KB |
+
+Valibot also has `@valibot/to-json-schema` 1.8.0 for the editor schema. `check()` rules are skipped in the JSON Schema (`errorMode: 'ignore'`); `toJsonSchema` doesn't emit `$schema`, so the generator adds it.
+
+**css-tree 3.2.1 (T-1.2, D-026).** Docs via Context7 (`/csstree/csstree`), behaviour checked with spike scripts:
+
+- Bundle: the package root is 200.6 KB min / 56.2 KB gzip (it pulls in the lexer and syntax data). Importing only `css-tree/parser`, `/walker`, `/generator`, `/tokenizer`, `/utils` is 81.0 KB min / 23.5 KB gzip. `@types/css-tree` 3.2.0 only types the root, so `packages/compiler/src/css/css-tree-subpaths.d.ts` re-declares the subpaths.
+- `:--name` parses as `PseudoClassSelector { name: "--name" }` everywhere, including inside `:not()`/`:has()`; splicing in `:is(<list>)` and regenerating works.
+- `token(color.bg)` is a parse error (the value falls back to an opaque `Raw` node); `token(color-bg)` parses as a function with one identifier.
+- With `parseAtrulePrelude: false`, unknown at-rules (`@setting density = compact`, `@setting !x`) keep a `Raw` prelude and a parsed block, with no errors. With the default (`true`), those preludes are parse errors.
+- Escapes are **not decoded** in names: `@\69mport` is an at-rule named `\69mport`, `b\61ckground` a property with a backslash. `u\72l(…)` and `\75rl(…)` are parse errors (value becomes `Raw`). `URL(…)` is a normal `Url` node.
+- Error recovery wraps unparseable input in `Raw` nodes (e.g. `--x: {a:b}`), which a tree walk can't inspect, so the sanitizer fails any file with parse errors.
+- **No CSS nesting:** `.a { color: red; .b { … } }` is a parse error ("Identifier is expected").
+- `image-set("…")` takes URLs as plain `String` nodes, so blocking `Url` nodes alone isn't enough; the sanitizer allowlists value functions.
+
+**Compile performance (T-1.6).** 256 KB of generated dialect CSS (~2 400 rules, one component and `token()` each): ~60–75 ms warm per compile on the dev machine. The first version took ~200 ms; the culprit was a quadratic backslash scan (`indexOf` from every token start), fixed by tracking the next backslash. CI allows 250 ms to absorb slower runners.
+
+**Node type stripping.** Node 24.2 runs the `.ts` sources directly (CLI, JSON Schema script) with an `ExperimentalWarning`, silenced with `--disable-warning=ExperimentalWarning`. Relative imports therefore use `.ts` extensions in `packages/` (D-027).
+
+**Vitest gotcha.** `import x from './file.css?raw'` returns an empty string under Vitest (CSS isn't processed by default), so compiler tests read fixtures with `node:fs` from `test/`, which has its own Node-typed tsconfig.
+

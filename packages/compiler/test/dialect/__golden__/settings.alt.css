@@ -1,0 +1,5 @@
+:is(#primary.ytd-watch-flexy){max-width:var(--rk-s-max-width)}
+:is(ytd-rich-shelf-renderer[is-shorts],ytd-reel-shelf-renderer){outline:1px solid}
+:is(ytd-comment-thread-renderer){padding-block:4px}
+@media (min-width: 1000px){:is(ytd-rich-item-renderer,ytd-video-renderer){display:none}
+}

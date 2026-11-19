@@ -1,0 +1,3 @@
+/* expect: CSS_PARSE_ERROR
+   Content the parser cannot understand becomes an opaque Raw node; it must fail, not pass through. */
+.a { --x: { background: url(https://evil.test/r) }; }

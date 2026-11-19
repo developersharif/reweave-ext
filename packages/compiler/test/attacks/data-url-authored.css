@@ -1,0 +1,5 @@
+/* expect: CSS_URL_FORBIDDEN
+   Authored data: URLs bypass asset review (SVG can carry anything); use asset(<id>). */
+.a {
+  background: url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>");
+}

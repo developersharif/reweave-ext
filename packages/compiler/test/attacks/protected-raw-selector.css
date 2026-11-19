@@ -1,0 +1,5 @@
+/* expect: PROTECTED_COMPONENT_STYLED
+   The same element targeted by its raw tag name instead of the component alias. */
+ytd-consent-bump-v2-lightbox {
+  display: none !important;
+}

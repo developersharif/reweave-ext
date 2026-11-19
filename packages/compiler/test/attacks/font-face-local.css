@@ -1,0 +1,6 @@
+/* expect: CSS_FONT_FACE_SRC
+   @font-face may only use bundled fonts (local() probes installed fonts: fingerprinting). */
+@font-face {
+  font-family: probe;
+  src: local("Helvetica Neue");
+}

@@ -1,0 +1,4 @@
+/* expect: CSS_URL_FORBIDDEN */
+.a {
+  background: url("javascript:alert(1)");
+}

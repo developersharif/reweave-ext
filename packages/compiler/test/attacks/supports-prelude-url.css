@@ -1,0 +1,6 @@
+/* expect: CSS_URL_FORBIDDEN */
+@supports (background: url(https://evil.test/s)) {
+  .a {
+    color: red;
+  }
+}

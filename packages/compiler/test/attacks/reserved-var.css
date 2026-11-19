@@ -1,0 +1,5 @@
+/* expect: CSS_RESERVED_NAME
+   Templates may not overwrite engine variables (e.g. to break another component or the palette). */
+:root {
+  --rk-color-bg: red;
+}

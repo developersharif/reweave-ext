@@ -1,0 +1,473 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Palette v1",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){1,31}\\/[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 60
+    },
+    "version": {
+      "type": "string"
+    },
+    "license": {
+      "enum": [
+        "MIT",
+        "Apache-2.0",
+        "CC-BY-4.0",
+        "CC-BY-SA-4.0",
+        "CC0-1.0",
+        "MPL-2.0"
+      ],
+      "type": "string"
+    },
+    "tokens": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z]+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "$value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "minItems": 1,
+                  "maxItems": 6
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "colorSpace": {
+                      "enum": [
+                        "srgb",
+                        "srgb-linear",
+                        "display-p3",
+                        "oklch",
+                        "oklab",
+                        "hsl",
+                        "hwb",
+                        "lab",
+                        "lch"
+                      ],
+                      "type": "string"
+                    },
+                    "components": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "const": "none"
+                          }
+                        ]
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "alpha": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "hex": {
+                      "type": "string",
+                      "pattern": "^#[0-9a-fA-F]{6}$"
+                    }
+                  },
+                  "required": [
+                    "colorSpace",
+                    "components"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "enum": [
+                        "px",
+                        "rem"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "enum": [
+                        "ms",
+                        "s"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ]
+                }
+              ]
+            },
+            "$type": {
+              "enum": [
+                "color",
+                "dimension",
+                "fontFamily",
+                "number",
+                "duration"
+              ],
+              "type": "string"
+            },
+            "$description": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "$value"
+          ]
+        }
+      }
+    },
+    "modes": {
+      "type": "object",
+      "properties": {
+        "light": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z]+$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "$value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "maxLength": 64
+                      },
+                      "minItems": 1,
+                      "maxItems": 6
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "colorSpace": {
+                          "enum": [
+                            "srgb",
+                            "srgb-linear",
+                            "display-p3",
+                            "oklch",
+                            "oklab",
+                            "hsl",
+                            "hwb",
+                            "lab",
+                            "lch"
+                          ],
+                          "type": "string"
+                        },
+                        "components": {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "const": "none"
+                              }
+                            ]
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        "alpha": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "hex": {
+                          "type": "string",
+                          "pattern": "^#[0-9a-fA-F]{6}$"
+                        }
+                      },
+                      "required": [
+                        "colorSpace",
+                        "components"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "enum": [
+                            "px",
+                            "rem"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "enum": [
+                            "ms",
+                            "s"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ]
+                    }
+                  ]
+                },
+                "$type": {
+                  "enum": [
+                    "color",
+                    "dimension",
+                    "fontFamily",
+                    "number",
+                    "duration"
+                  ],
+                  "type": "string"
+                },
+                "$description": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "$value"
+              ]
+            }
+          }
+        },
+        "dark": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z]+$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "$value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "maxLength": 64
+                      },
+                      "minItems": 1,
+                      "maxItems": 6
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "colorSpace": {
+                          "enum": [
+                            "srgb",
+                            "srgb-linear",
+                            "display-p3",
+                            "oklch",
+                            "oklab",
+                            "hsl",
+                            "hwb",
+                            "lab",
+                            "lch"
+                          ],
+                          "type": "string"
+                        },
+                        "components": {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "const": "none"
+                              }
+                            ]
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        "alpha": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "hex": {
+                          "type": "string",
+                          "pattern": "^#[0-9a-fA-F]{6}$"
+                        }
+                      },
+                      "required": [
+                        "colorSpace",
+                        "components"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "enum": [
+                            "px",
+                            "rem"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "enum": [
+                            "ms",
+                            "s"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ]
+                    }
+                  ]
+                },
+                "$type": {
+                  "enum": [
+                    "color",
+                    "dimension",
+                    "fontFamily",
+                    "number",
+                    "duration"
+                  ],
+                  "type": "string"
+                },
+                "$description": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "$value"
+              ]
+            }
+          }
+        }
+      },
+      "required": []
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "license",
+    "tokens"
+  ]
+}

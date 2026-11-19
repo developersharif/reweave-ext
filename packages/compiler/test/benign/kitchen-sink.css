@@ -1,0 +1,120 @@
+/* Everything here is allowed by the v1 allowlist and must compile without diagnostics. */
+@layer base, theme;
+
+@font-face {
+  font-family: "Inter";
+  src: asset(inter) format("woff2") tech(variations);
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF;
+}
+
+@property --card-glow {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  50% {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer theme {
+  html,
+  body {
+    background: token(color-bg);
+    color: token(color-text);
+  }
+  a:any-link {
+    color: token(color-link);
+  }
+}
+
+:--video-card {
+  border-radius: calc(token(radius-md) * 1.5);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, token(color-surface), transparent 20%),
+      token(color-surface-2)
+    ),
+    conic-gradient(from 90deg at 50% 50%, rgb(0 0 0 / 0.1), hsl(220 20% 20%));
+  box-shadow: 0 1px 2px light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.05));
+  animation: fade-in token(motion-duration) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  filter: saturate(1.1) drop-shadow(0 0 2px token(color-border));
+  transition:
+    transform 150ms steps(4, end),
+    --card-glow 300ms linear;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+}
+
+:--video-card:is(:hover, :focus-within) {
+  transform: translateY(-2px) rotate(0.2deg);
+}
+:--video-card:not(:--shorts-shelf *) :--video-title {
+  font-family: token(font-heading);
+}
+:--primary-column:has(> :--video-title) {
+  max-width: clamp(640px, 80vw, setting(maxWidth));
+}
+:--comment:nth-child(2n + 1 of :--comment) {
+  background: token(color-surface);
+}
+
+:--masthead::after {
+  content: "›";
+}
+:--video-title::before {
+  content: attr(title) " ";
+}
+ol.rk-like-list {
+  counter-reset: item;
+  list-style: none;
+}
+ol.rk-like-list > li::before {
+  counter-increment: item;
+  content: counters(item, ".") " ";
+}
+[data-state="open"] > .panel {
+  clip-path: inset(0 round token(radius-lg));
+}
+
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  :--related-sidebar {
+    width: max(320px, 25vw);
+  }
+}
+
+@supports selector(:has(a)) {
+  body:has(dialog[open]) {
+    overflow: hidden;
+  }
+}
+
+@container sidebar (min-width: 400px) {
+  :--related-sidebar :--video-card {
+    display: grid;
+  }
+}
+
+@scope (.card) to (.content) {
+  img {
+    border-radius: token(radius-sm);
+  }
+}
+
+@setting hideShorts {
+  :--shorts-shelf {
+    opacity: 0.4;
+  }
+}

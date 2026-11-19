@@ -1,0 +1,5 @@
+/* expect: CSS_PROPERTY_FORBIDDEN
+   Legacy IE HTC behaviors run script. */
+.a {
+  behavior: url(evil.htc);
+}

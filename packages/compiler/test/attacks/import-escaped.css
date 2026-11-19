@@ -1,0 +1,3 @@
+/* expect: CSS_ESCAPE_FORBIDDEN
+   css-tree keeps the at-rule name undecoded ("\69mport"), so a name check alone misses it. */
+@\69mport "https://evil.test/x.css";

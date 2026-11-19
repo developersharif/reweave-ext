@@ -1,0 +1,5 @@
+/* expect: CSS_FUNCTION_FORBIDDEN
+   Legacy IE expression() runs script. */
+.a {
+  width: expression(alert(1));
+}

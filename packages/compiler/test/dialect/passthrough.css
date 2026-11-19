@@ -1,0 +1,16 @@
+@keyframes pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+@layer theme {
+  html {
+    color-scheme: dark;
+  }
+}
+body {
+  margin: 0;
+}

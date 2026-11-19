@@ -1,0 +1,88 @@
+{
+  "$schema": "https://schemas.example.invalid/template/v1.json",
+  "schemaVersion": 1,
+  "id": "demo/minimal-youtube",
+  "name": "Minimal YouTube",
+  "summary": "Distraction-free YouTube: no Shorts, no homepage feed, calm typography.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "authors": [{ "handle": "demo" }],
+  "category": "focus",
+  "tags": ["minimal", "focus", "no-shorts"],
+
+  "targets": [
+    {
+      "adapter": "youtube",
+      "adapterRange": "^2.0.0",
+      "styles": [
+        { "file": "styles/base.css" },
+        { "file": "styles/home.css", "routes": ["home"] },
+        { "file": "styles/watch.css", "routes": ["watch"] }
+      ],
+      "hide": [
+        { "component": "shorts-shelf", "when": "hideShorts" },
+        { "component": "home-feed", "when": "hideHomeFeed" }
+      ]
+    }
+  ],
+
+  "tokens": {
+    "consumes": "standard/v1",
+    "defaults": {
+      "color.bg": "#0f0f10",
+      "color.text": "#e8e8ea",
+      "color.accent": "#7aa2f7",
+      "font.body": "Inter",
+      "radius.md": "10px"
+    }
+  },
+
+  "settings": [
+    { "id": "hideShorts", "type": "boolean", "label": "Hide Shorts", "default": true },
+    { "id": "hideHomeFeed", "type": "boolean", "label": "Hide homepage feed", "default": false },
+    {
+      "id": "density",
+      "type": "select",
+      "label": "Density",
+      "default": "comfortable",
+      "options": [
+        { "value": "compact", "label": "Compact" },
+        { "value": "comfortable", "label": "Comfortable" }
+      ]
+    },
+    {
+      "id": "maxWidth",
+      "type": "range",
+      "label": "Content width",
+      "default": 1200,
+      "min": 800,
+      "max": 1800,
+      "step": 50,
+      "unit": "px"
+    }
+  ],
+
+  "variants": [
+    { "id": "focus", "label": "Deep focus", "settings": { "hideHomeFeed": true } },
+    { "id": "light", "label": "Light", "tokens": { "color.bg": "#fafafa", "color.text": "#111" } }
+  ],
+
+  "assets": [
+    { "id": "inter", "file": "assets/inter-var.woff2", "kind": "font", "license": "OFL-1.1" }
+  ],
+
+  "previews": [
+    {
+      "file": "previews/cover.webp",
+      "alt": "Watch page with dark minimal layout",
+      "role": "cover"
+    },
+    {
+      "file": "previews/watch-before-after.webp",
+      "alt": "Before/after of the watch page",
+      "route": "watch"
+    }
+  ],
+
+  "requires": { "engine": ">=1.0.0" }
+}

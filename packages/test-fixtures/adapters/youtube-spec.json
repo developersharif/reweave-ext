@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "youtube",
+  "version": "2.3.1",
+  "name": "YouTube",
+  "hosts": ["www.youtube.com"],
+  "routes": {
+    "home": { "path": "/" },
+    "watch": { "path": "/watch" },
+    "shorts": { "path": "/shorts/*" },
+    "search": { "path": "/results" },
+    "channel": { "path": ["/@*", "/channel/*", "/c/*"] },
+    "account": { "path": ["/account*"], "sensitive": true }
+  },
+  "components": {
+    "masthead": { "selector": "ytd-masthead", "routes": ["*"] },
+    "guide-sidebar": { "selector": "ytd-guide-renderer, ytd-mini-guide-renderer" },
+    "home-feed": {
+      "selector": "ytd-browse[page-subtype='home'] ytd-rich-grid-renderer",
+      "routes": ["home"]
+    },
+    "video-card": { "selector": "ytd-rich-item-renderer, ytd-video-renderer" },
+    "shorts-shelf": { "selector": "ytd-rich-shelf-renderer[is-shorts], ytd-reel-shelf-renderer" },
+    "primary-column": { "selector": "#primary.ytd-watch-flexy", "routes": ["watch"] },
+    "video-title": { "selector": "ytd-watch-metadata h1", "routes": ["watch"] },
+    "related-sidebar": { "selector": "#secondary.ytd-watch-flexy", "routes": ["watch"] },
+    "comment": { "selector": "ytd-comment-thread-renderer", "routes": ["watch"] },
+    "consent-dialog": { "selector": "ytd-consent-bump-v2-lightbox", "protected": true }
+  },
+  "shadowRoots": [],
+  "navigationEvents": ["yt-navigate-finish"],
+  "probes": [
+    { "component": "masthead", "route": "home", "expect": "present" },
+    { "component": "primary-column", "route": "watch", "expect": "present" }
+  ]
+}

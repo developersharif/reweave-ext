@@ -81,15 +81,25 @@ Requirements: Node ≥ 22 (`.nvmrc` pins 24) and pnpm 12 (`packageManager` field
 | `pnpm install` | Installs the workspace. Also runs `wxt prepare`, which generates `apps/extension/.wxt/` types |
 | `pnpm dev` | WXT dev mode for Chrome with auto-reload. Dev builds add `tabs`/`scripting`; that's expected |
 | `pnpm --filter @reskin/extension dev:firefox` | Firefox dev mode |
-| `pnpm check` | **Run before every commit.** typecheck → Biome lint → unit tests → Chrome + Firefox builds → `check:manifest` guard |
+| `pnpm check` | **Run before every commit.** typecheck → Biome lint → unit tests → Chrome + Firefox builds → `check:manifest` guard → JSON Schema freshness |
 | `pnpm test` | Vitest in every package (extension tests use `WxtVitest` + `fakeBrowser`) |
 | `pnpm test:e2e` | Playwright e2e against the built extension. Run `pnpm build` first; the first time also run `pnpm --filter @reskin/extension exec playwright install chromium` |
 | `pnpm format` | Biome auto-fix (format + organize imports) |
 | `pnpm --filter @reskin/extension zip` | Store-ready zips in `apps/extension/.output/` |
+| `pnpm reskin validate <dir> [--adapter <adapter.json>]` | Validate a template directory (manifest, files, CSS sanitizer, dialect). Add `--json` for machine output |
+| `pnpm reskin compile <dir> --adapter <file> [--set id=value] [--variant id] [--palette file]` | Print the compiled output for one adapter |
+| `pnpm --filter @reskin/schema gen:json-schema` | Regenerate `packages/schema/json/*.v1.json` after changing a schema |
+| `pnpm --filter @reskin/compiler exec vitest run -u` | Rewrite compiler golden files. Review the diff before committing |
 
-## 7. Layout notes learned in M0
+## 7. Layout notes (M0, M1)
 
 - `apps/extension/src/entrypoints/` contains **only** WXT entrypoints. Any file there, including tests, is treated as an entrypoint. Keep entrypoints thin: put logic in `src/<area>/` modules with tests beside them.
 - `apps/extension/e2e/` has its own tsconfig with Node types. Extension source must not see Node types.
 - Workspace packages export TypeScript source directly (`"exports": { ".": "./src/index.ts" }`). There is no package build step; Vite, Vitest and tsc consume the source.
 - TypeScript is pinned to 6.0.x (D-022). Don't bump it to 7.x.
+- Relative imports in `packages/` use `.ts` extensions (D-027), so Node runs the CLI and scripts without a build. No `enum`, `namespace` or parameter properties.
+- `packages/compiler/test/` and `cli/` have their own Node-typed tsconfigs. `src/` stays free of Node, DOM and `chrome.*` types. Vitest returns empty strings for `?raw` CSS imports, so fixture-driven tests read files with `node:fs` from `test/`.
+- Biome must not touch template-dialect CSS, fixtures or golden files (`biome.json` excludes `packages/**/*.css`, `packages/test-fixtures/**`, golden dirs and `packages/schema/json/**`). Formatting them would break golden comparisons.
+- New sanitizer rules start as an attack fixture in `packages/compiler/test/attacks/` with a `/* expect: CODE */` header.
+- Diagnostic codes live in `packages/schema/src/diagnostics.ts`. Add new codes there; never rename one that shipped.
+

@@ -1,0 +1,5 @@
+/* expect: PROTECTED_COMPONENT_STYLED */
+:--consent-dialog {
+  font-size: 0;
+  color: transparent;
+}

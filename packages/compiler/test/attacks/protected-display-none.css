@@ -1,0 +1,5 @@
+/* expect: PROTECTED_COMPONENT_STYLED
+   Protected components (consent/security UI) cannot be styled at all, so every hiding technique is covered. */
+:--consent-dialog {
+  display: none;
+}

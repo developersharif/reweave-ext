@@ -150,7 +150,7 @@ On publish, the API validates, sanitizes, compiles a **bundle** (§9), stores it
 | `routes` | string[] | no | Restricts the whole target to adapter route ids. Default: all non-sensitive routes. |
 | `styles` | StyleRef[] | **yes** | `{ file, routes?, media? }`. `routes` are adapter route ids; `media` is a media query string (validated). |
 | `hide` | HideRule[] | no | `{ component, when?, routes? }` → compiled to `display: none !important` on the adapter selector. `when` = boolean setting id (optionally `!id` for negation). |
-| `rawSelectors` | boolean | no | Must be `true` if any style file uses selectors not derived from adapter components. Surfaces a "fragile" badge. Computed and verified by the compiler; mismatch = publish error. |
+| `rawSelectors` | boolean | no | Must be `true` if any style file uses selectors not derived from adapter components (classes, ids, attributes or element names other than `html`/`body`/`*`, including `:--card .title`). Surfaces a "fragile" badge. Computed by the compiler: undeclared raw selectors are an error, `true` without any raw selector is a warning. |
 
 Why no free-form `urlPatterns` in v1: adapters own URL→route mapping so that templates are portable when a site changes URL structure (e.g. `/feed/subscriptions` → `/subscriptions`). An escape hatch `urlPatterns` (Chrome match-pattern syntax, constrained to the adapter's hosts) is reserved for v1.1 if creators need it.
 
@@ -163,10 +163,11 @@ Creators write normal CSS plus three compile-time extensions. Everything compile
 | Syntax | Meaning | Compiles to |
 |---|---|---|
 | `:--video-card` | Adapter component alias | The adapter's current selector list, e.g. `:is(ytd-rich-item-renderer, ytd-video-renderer)` |
-| `token(color.bg)` | Standard design token | `var(--rk-color-bg)` |
-| `@setting hideShorts { … }` | Rules active when boolean setting is on | Block included in compiled CSS only when on (recompiled on change) |
+| `token(color-bg)` | Standard design token (manifest name `color.bg`) | `var(--rk-color-bg)` |
+| `@setting hideShorts { … }` | Rules active when boolean setting is on (`@setting !hideShorts` when off) | Block included in compiled CSS only when on (recompiled on change) |
 | `@setting density = compact { … }` | Rules active when select setting equals value | Block included only when the value matches |
 | `setting(maxWidth)` | Numeric/color/font setting value | `var(--rk-s-max-width)`, defined in a generated `:root` rule |
+| `asset(inter)` | Bundled font or image from the manifest's `assets` | `url(data:…)` |
 
 `rk` is the internal namespace prefix (D-012). Creators never type it, so it can change without breaking templates. Route-scoped files compile to separate sheets that the runtime enables/disables on navigation (D-021); nothing is written to the page's DOM attributes.
 
@@ -174,7 +175,7 @@ Example `styles/watch.css`:
 
 ```css
 :--primary-column { max-width: setting(maxWidth); margin-inline: auto; }
-:--video-title    { font: 600 1.4rem/1.3 token(font.body); color: token(color.text); }
+:--video-title    { font: 600 1.4rem/1.3 token(font-body); color: token(color-text); }
 :--related-sidebar { opacity: .6; transition: opacity .2s; }
 :--related-sidebar:hover { opacity: 1; }
 
@@ -183,16 +184,30 @@ Example `styles/watch.css`:
 }
 ```
 
-Implementation note: CSS parsers must accept `:--name` (it mirrors the syntax of the unimplemented CSS Extensions `@custom-selector` draft). Verify with css-tree in the M1 spike; if `:--name` can't be parsed reliably, fall back to a functional pseudo-class `:component(name)`. Decision tracked in `task-tracker.md` (M1).
+Dialect rules settled in the M1 spike (D-026, measurements in `technical-research.md` §9):
+
+- `:--name` parses cleanly in css-tree 3.2.1 as a pseudo-class, anywhere a selector can appear (`:not(:--x)`, `:has(> :--x)`). No fallback syntax is needed. It compiles to `:is(<adapter selector list>)`, so specificity is the highest specificity in the adapter's list.
+- Token names are written with a hyphen in CSS (`token(color-bg)`, `token(color-text-muted)`). The first hyphen separates group and name. A dot is not valid inside CSS function arguments, so `token(color.bg)` is rejected with a hint. Manifests and palettes keep the dotted form (`"color.bg"`).
+- `@setting` preludes have exactly three forms: `@setting id`, `@setting !id` (boolean settings) and `@setting id = value` (select settings, value must be one of the options). `@setting` may appear at top level or inside other at-rule blocks, and may be nested. Everything inside a block is validated even when the block is dropped for the current values.
+- **No CSS nesting in v1.** css-tree 3.2.1 doesn't parse nested style rules (`.a { .b { } }`), so the sanitizer rejects them as parse errors. Write flat rules.
+- Components are not resolved inside `@scope (…)` preludes in v1 (error), only in rule selectors.
 
 ### 4.1 Allowed CSS (v1 allowlist)
 
-- **At-rules:** `@media`, `@supports`, `@container`, `@layer`, `@keyframes`, `@font-face` (only `src: asset(...)`), `@property`, `@scope`, plus dialect `@setting`.
+The allowlist is implemented in `packages/compiler/src/sanitize/allowlist.ts`; that file is authoritative if this summary drifts.
+
+- **Escapes:** backslash escapes are allowed only inside strings. Anywhere else (`@\69mport`, `u\72l(`, `b\61ckground`) is an error, because css-tree keeps escaped names undecoded and name checks would miss them.
+- **Parse errors fail the file.** The compiler never passes through text it couldn't parse, and output is always regenerated from the checked syntax tree.
+- **At-rules:** `@media`, `@supports`, `@container`, `@layer`, `@keyframes`, `@font-face` (only `src: asset(...)`), `@property`, `@scope`, plus dialect `@setting`. Preludes may not contain `url()` or functions other than `selector()`, `style()`, `scroll-state()`, `font-tech()`, `font-format()`, math functions and selector pseudo-classes.
 - **Forbidden at-rules:** `@import`, `@namespace`, `@charset` (stripped), `@document`/`@-moz-document` (URL scoping belongs in the manifest), any unknown at-rule.
-- **`url()` / `image-set()` / `src()`:** only `asset(<id>)` references → compiled to `data:` URIs or extension-local blob URLs. Any `http:`, `https:`, `//`, `data:` authored directly, or `javascript:` → **publish error**.
-- **Forbidden properties/values:** `behavior`, `-moz-binding`, `expression()`, `-webkit-user-modify`, `filter: url(...)` (external SVG), `cursor: url(...)` external.
-- **`content` property:** allowed with `none`, `normal`, `""`, counters, `attr()`, and strings ≤ 3 characters (icons, separators). Longer strings → **flagged for human review** (UI-redress risk: fake support numbers, altered prices). See security-model §3.
-- **Selector limits:** ≤ 4 levels of `:has()` nesting, no `:has()` on `*` or `:root` with descendant combinators (performance), total selectors ≤ 5 000 per template.
+- **`url()`:** never authored. Only `asset(<id>)` references, compiled to base64 `data:` URIs (woff2, webp, png, avif, svg). Any authored `url()` (`http:`, `https:`, `//`, `data:`, `javascript:`, `#fragment`) → **error**.
+- **Value functions are allowlisted:** math, color, gradients, transforms, filters, easing, grid, shapes, `counter()`/`counters()`, `var()`/`env()`, anchor and scroll-timeline functions, plus the dialect functions. URL-taking functions (`image-set()`, `-webkit-image-set()`, `image()`, `cross-fade()`, `src()`, `element()`, `paint()`) and `expression()` are not on the list. `attr()` is allowed only in `content`.
+- **Forbidden properties:** `behavior`, `-ms-behavior`, `-moz-binding`, `-webkit-user-modify`, `-o-link`, `-o-link-source`.
+- **Reserved names:** templates may not declare or reference `--rk-*` custom properties. Use `token()` and `setting()`, so the prefix can change (D-012).
+- **Text shown on the page:** strings longer than 3 characters in `content`, `quotes`, `list-style-type` or `list-style` → **flagged for human review** (UI-redress risk: fake support numbers, altered prices). Short strings, counters and `attr()` are fine. See security-model §3.
+- **Overlays:** a rule with `position: fixed|absolute` plus `pointer-events: none` (click-through decoy), or `position: fixed` with `z-index` ≥ 10 000, → **flagged for human review**.
+- **Selector limits:** ≤ 4 levels of `:has()` nesting (error). `:has()` with a descendant combinator on `*`, `html`, `body`, `:root` or a bare compound → warning (performance). Total selectors ≤ 5 000 per template (error).
+- **Protected components** can't be styled at all: any selector using a protected component (`:--consent-dialog`, `:--consent-dialog button`), or a raw selector naming one of its elements, ids or classes, is an error. This covers every hiding technique by construction (display, visibility, opacity, transforms, clip-path, off-screen, zero font size). Hiding an *ancestor* can't be caught statically; the runtime pauses templates while a protected component is present (T-2.9).
 - **Size limits:** ≤ 256 KB total CSS source; ≤ 2 MB total bundle including assets.
 - **Sensitive routes:** adapters mark routes such as login, checkout, account security, and payments as `sensitive: true`. The engine never applies templates there. Not overridable by templates.
 
@@ -208,7 +223,7 @@ User-facing controls rendered by the extension popup / options page. Settings ar
 | `select` | `options[] {value,label}`, `default` | matching `@setting <id> = <value>` blocks included (value matches `^[a-z0-9-]{1,32}$`) |
 | `range` | `min`, `max`, `step`, `unit` (`px`,`rem`,`%`,`ms`, none), `default` | `--rk-s-<id>: <n><unit>` (clamped) |
 | `color` | `default` (hex/oklch) | `--rk-s-<id>: <color>` (validated color syntax) |
-| `font` | `options[]` from bundled `assets` or system-safe families | `--rk-s-<id>: <family>` |
+| `font` | `options[] {value,label}`, `default`. Each value is a font-family list (≤ 6 names, letters/digits/space/`-`/`_`); bundled fonts are declared with `@font-face` + `asset()` | `--rk-s-<id>: <family>` |
 
 Rules: `id` matches `^[a-z][a-zA-Z0-9]{0,31}$`; labels ≤ 40 chars; **no free-text type in v1**. Setting values are stored per user per template; on upgrade, values are kept by `id`, dropped if the setting disappears, and re-clamped if the range changes.
 
@@ -230,7 +245,8 @@ Tokens make templates and palettes interchangeable ("wear Catppuccin on any toke
 | motion | `duration` |
 
 - Resolution order (later wins): standard defaults → template `tokens.defaults` → active `variant.tokens` → **user's palette** (if the template declares `consumes: "standard/v1"`) → user overrides.
-- A **Palette** package is `{ schemaVersion, id, name, version, license, tokens: <DTCG subset>, modes?: { light, dark } }`. Palettes contain no CSS and no selectors, so they are low-risk and need lighter review.
+- A **Palette** package is `{ schemaVersion, id, name, version, license, tokens: <DTCG subset>, modes?: { light, dark } }`. `tokens` is two levels deep (`{ "color": { "bg": { "$value": … } } }`). Supported `$value` shapes: DTCG color objects (`hex` is used for `srgb`/`display-p3`; `oklch`, `oklab`, `lab`, `lch`, `hsl`, `hwb` are converted from `components`), dimension `{ value, unit: px|rem }`, duration `{ value, unit: ms|s }`, numbers, and `fontFamily` strings or arrays. Plain CSS strings (`"#1a1a2e"`, `"12px"`) are accepted as a convenience. Unknown tokens are a warning and ignored. Palettes contain no CSS and no selectors, so they are low-risk and need lighter review.
+- Every token value is validated against its type before it reaches CSS (hex/named/functional colors, `px|rem|em|%|vw|vh|ch` dimensions, quoted safe font names), so a palette can't break out of its declaration.
 
 ---
 
@@ -330,7 +346,9 @@ Adapters live in the monorepo (`packages/adapters/<site>/adapter.json`), are ope
     "video-card":       { "selector": "ytd-rich-item-renderer, ytd-video-renderer" },
     "shorts-shelf":     { "selector": "ytd-rich-shelf-renderer[is-shorts], ytd-reel-shelf-renderer" },
     "primary-column":   { "selector": "#primary.ytd-watch-flexy", "routes": ["watch"] },
+    "video-title":      { "selector": "ytd-watch-metadata h1", "routes": ["watch"] },
     "related-sidebar":  { "selector": "#secondary.ytd-watch-flexy", "routes": ["watch"] },
+    "comment":          { "selector": "ytd-comment-thread-renderer", "routes": ["watch"] },
     "consent-dialog":   { "selector": "ytd-consent-bump-v2-lightbox", "protected": true }
   },
   "shadowRoots": [],
@@ -363,14 +381,16 @@ Adapters live in the monorepo (`packages/adapters/<site>/adapter.json`), are ope
 
 ## 12. JSON Schema and validation pipeline
 
-- Source of truth: TypeScript schema in `packages/schema` (Valibot or Zod — decide in M1, prefer the smaller runtime for the extension) → generated JSON Schema published at `$schema` URL for editor autocomplete.
+- Source of truth: Valibot schemas in `packages/schema` (D-025) → JSON Schema generated into `packages/schema/json/*.v1.json` (`pnpm --filter @reskin/schema gen:json-schema`; `pnpm check` fails if it's stale), to be published at the `$schema` URL for editor autocomplete. Rules JSON Schema can't express (semver, slug length, cross-field checks) exist only in the Valibot/semantic layer.
+- The spec example in §3.1 and the adapter in §11 are kept as test fixtures in `packages/test-fixtures/` and must stay valid.
 - Validation stages (same code in API and extension):
   1. JSON Schema / structural validation.
   2. Semantic checks (unique ids, cover preview present, settings referenced by `when` exist and are boolean, adapter + range exist, routes exist in adapter).
   3. CSS parse (css-tree) → allowlist walk (§4.1) → dialect resolution check (every `:--x` exists in the adapter range's **minimum** version).
   4. Asset checks (MIME sniffing, size, SVG sanitizing, font license).
   5. Policy checks (names, protected components, sensitive routes, long `content` strings → review queue).
-- Errors are machine-readable `{ code, path, message }` (e.g. `CSS_EXTERNAL_URL`, `UNKNOWN_COMPONENT`, `SETTING_NOT_BOOLEAN`) so the editor can show inline diagnostics.
+- Diagnostics are machine-readable `{ code, severity, message, path?, file?, line?, column? }`. `severity` is `error` (blocks), `warning` or `review` (goes to the human review queue, doesn't block compiling). Codes are stable `UPPER_SNAKE` names listed in `packages/schema/src/diagnostics.ts` (e.g. `CSS_URL_FORBIDDEN`, `DIALECT_UNKNOWN_COMPONENT`, `SETTING_REF_NOT_BOOLEAN`), so the editor and CI comments can key off them.
+- CLI: `pnpm reskin validate <dir> [--adapter <adapter.json>]` runs stages 1–3 and 5 on a template directory; `pnpm reskin compile <dir> --adapter <file> [--variant id] [--set id=value] [--palette file] [--json]` prints the compiled output.
 
 ---
 

@@ -1,0 +1,4 @@
+/* expect: CSS_FUNCTION_FORBIDDEN */
+.a {
+  background-image: -webkit-image-set("https://evil.test/d.png" 1x);
+}
