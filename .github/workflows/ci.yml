@@ -28,11 +28,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # typecheck + lint + unit tests + Chrome/Firefox builds + manifest guard
-      - run: pnpm check
-
+      # Adapter fixture tests (in `pnpm check`) and e2e both use Playwright's Chromium.
       - name: Install Playwright Chromium
         run: pnpm --filter @reskin/extension exec playwright install --with-deps chromium
+
+      # typecheck + lint + unit tests + Chrome/Firefox builds + manifest guard
+      - run: pnpm check
 
       - name: E2E (fixtures only, never live sites)
         run: pnpm test:e2e

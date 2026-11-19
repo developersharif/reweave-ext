@@ -89,15 +89,82 @@ Source for all rows: Chrome extension docs via Context7. URLs are https://develo
 - **TypeScript:** `typescript@7.0.2` (npm `latest`) exports only a version stub plus `unstable/*` APIs, with no classic compiler API. The workspace pins **TypeScript 6.0.3** (D-022).
 - Plasmo/CRXJS comparison: not needed. WXT works as documented.
 
-## 5. Injection spike results (T-2.1, to fill)
+## 5. Injection and navigation spikes (T-2.1, T-2.2, done 2026-11-19)
+
+**Setup.** Live `www.youtube.com`, logged out, en-US, 1440×900. Playwright 1.65.1 drove its bundled Chromium 159.0.8154.6 (headless) with a throwaway unpacked extension. The extension had a `document_start` content script that reads CSS from `chrome.storage.local` and applies it, like the real runtime will. The CSS was about 60 KB: one visible rule plus 1,800 filler rules.
+
+Pages tested: `/` (home) and `/watch?v=jNQXAC9IVRw` (watch). Each cell is 10 cold loads with a fresh tab. CPU throttling used CDP `Emulation.setCPUThrottlingRate`. The machine was an Intel i5-1135G7 laptop.
+
+Scripts live in `apps/extension/spikes/live-youtube/` (`injection.mjs`, `navigation.mjs`, `ext/`). They run manually and never in CI.
+
+### 5.1 Injection (T-2.1)
+
+Times are in ms from content-script start: median / p95 of 10 loads.
 
 | Metric | adoptedStyleSheets | `<style>` fallback |
 |---|---|---|
-| `document_start` → styles applied (median / p95) | | |
-| Visible flash of the original layout, normal CPU (n loads) | | |
-| Visible flash, 4× CPU throttle (n loads) | | |
-| Page overwrote our sheets? | | |
-| Behavior after back/forward cache restore | | |
+| Styles applied, home, 1× CPU | 9.5 / 12.7 | 9.4 / 19.3 |
+| Styles applied, watch, 1× CPU | 22.4 / 36.6 | 10.6 / 20.9 |
+| Styles applied, home, 4× CPU | 48.5 / 169.8 | 145.7 / 282.7 |
+| Styles applied, watch, 4× CPU | 159.5 / 349.8 | 153.7 / 541.3 |
+| ...of which `storage.local.get` | 70–96% of each figure | 79–95% |
+| First contentful paint before our styles (any cell) | **0 / 40 loads** | **0 / 40 loads** |
+| `<body>` already existed when styles applied | 0 / 40 | 1 / 40 |
+| Style present on `ytd-masthead` after load | 40 / 40 | 40 / 40 |
+| Page removed or replaced our sheet (checked every 500 ms during load, and across 6 SPA navigations) | never | never |
+| Back/forward cache | YouTube is **not** restored from bfcache: after leaving to another site and going back, `pageshow.persisted` was false and the content script ran again. Styles applied as on a normal load | same |
+
+First paint came 680–2,500 ms after start, so styles always won by a wide margin, even with 4× throttling.
+
+**Conclusion.** Keep `adoptedStyleSheets` as the primary path (D-021 confirmed). Nearly all the latency is the storage read, not CSS parsing, and the `<style>` fallback is not faster. Keep the fallback only for sites where adopted sheets prove unreliable.
+
+Our own main-thread time is the `replaceSync` of about 60 KB, roughly 2–7 ms at 1×. That is near the 5 ms budget (extension-architecture §14), so T-2.6 measures it on the real content script.
+
+**Finding: the page can see adopted sheets.** From the page's own (main-world) scripts:
+- `document.adoptedStyleSheets` lists the sheet the content script adopted;
+- its `cssRules` are readable.
+
+A `<style>` element would be visible too. Computed styles reveal any injected CSS in any case. So "no DOM markers" (security-model T8) means no *nodes, attributes or globals*; it can't mean the styling is undetectable. Consequences:
+- compiled CSS carries no template ids, names or comments;
+- the `--rk-*` custom properties are a known, accepted marker (D-012);
+- risk R-18 records this.
+
+### 5.2 Navigation (T-2.2)
+
+The test walked through: `/results` → click a result → `/watch` → click the logo → `/` → search → `/results` → back → forward → another site and back.
+
+Latency is measured from the page's own `navigate` event in the main world. That is the moment the URL changes.
+
+| Signal (observed in the content script's isolated world) | Fires on | Latency after the URL change |
+|---|---|---|
+| Navigation API `currententrychange` (available in the isolated world, Chrome 159) | push, replace, back/forward | **1–2 ms** |
+| `yt-navigate-start` (DOM event on `document`) | push (link clicks, search) | 1 ms |
+| `popstate` | back/forward only | 2 ms |
+| `yt-navigate-finish` | every navigation, plus the initial load | 520–1,120 ms for push (after YouTube fetches and renders the new page); 10–30 ms for back/forward |
+| `location.href` poll, 250 ms interval | all | 80–215 ms |
+
+`URLPattern` is also available in the isolated world. We don't need it: adapter route patterns only use `*`, and `matchRoute` in `@reskin/schema` handles that in about 40 lines that also work in Firefox.
+
+**Chosen strategy** (extension-architecture §4):
+1. Route changes are detected with `currententrychange`, with `popstate` + `pageshow` as fallbacks for browsers without the Navigation API.
+2. Adapter `navigationEvents` mark "navigation finished". Probes run then.
+3. A visible-only `location.href` poll every 750 ms is the last resort.
+
+**YouTube keeps the old page on screen for 0.5–1 s** after the URL changes, until `yt-navigate-finish`. If the old route's sheets turned off at the URL change, the old page would briefly show unstyled. So:
+- the new route's sheets are enabled immediately;
+- the previous route's sheets stay on until a `navigationEvents` event fires, or 1.5 s pass.
+
+Adapter selectors are scoped to each page element (`ytd-browse[page-subtype=…]`, `ytd-watch-flexy`, `ytd-search`), so the short overlap is harmless.
+
+### 5.3 YouTube DOM in November 2026 (input to T-2.3)
+
+- **Light DOM:** YouTube's page DOM is light DOM, with no shadow roots to pierce.
+- **Old pages stay alive:** `ytd-page-manager` keeps previously visited page elements alive, hidden. Every page-specific selector must be scoped to its page element.
+- **Cards:** video cards are now mostly `yt-lockup-view-model` (watch sidebar, channel, playlist). Search results are still `ytd-video-renderer`, and Shorts are `ytm-shorts-lockup-view-model-v2`.
+- **Logged-out home:** a prompt (`ytd-feed-nudge-renderer`), not a feed. The logged-in grid (`ytd-rich-item-renderer`) could not be captured without an account.
+- **Video description:** moved into an engagement panel, so it is not an adapter component in v1.
+- **Fixture parsing:** live DOM built by scripts nests `<button>` in `<button>` and `<a>` in `<a>`, which the HTML parser re-parents. The fixture capture script rewrites the inner ones to `<span>` and verifies that each saved file parses back to the same element tree (packages/test-fixtures/README.md).
+- **happy-dom 21.0.4 disagrees with Chromium:** on the same fixture it gave different element counts and wrong results for `:not()` with a complex selector. Adapter tests therefore run selectors in headless Chromium (Playwright), and CI installs Chromium before `pnpm check`.
 
 ## 6. Shadow DOM findings (T-4.1, to fill)
 
@@ -119,7 +186,7 @@ Source for all rows: Chrome extension docs via Context7. URLs are https://develo
 
 ## 8. Open technical questions
 
-1. Can adapter `navigationEvents` (site-specific DOM events like `yt-navigate-finish`) be listened to from the isolated world? They are DOM events, so they should be. Confirm in T-2.2.
+1. ~~Can adapter `navigationEvents` (site-specific DOM events like `yt-navigate-finish`) be listened to from the isolated world?~~ Yes, confirmed in T-2.2 (§5.2).
 2. A cheap logged-out canary for X (most pages need login). Answer by M8.
 3. ~~Whether the compiler (css-tree) fits comfortably in the service worker bundle (T-1.2).~~ Yes: ~23.5 KB gzip with subpath imports (§9).
 4. When css-tree supports CSS nesting, should v1.1 allow nested rules? Watch css-tree releases (T-5.9).

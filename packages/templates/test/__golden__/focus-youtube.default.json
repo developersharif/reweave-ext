@@ -1,0 +1,79 @@
+{
+  "engineVersion": "1.0.0",
+  "templateId": "reskin/focus-youtube",
+  "templateVersion": "0.1.0",
+  "adapterId": "youtube",
+  "adapterVersion": "1.0.0",
+  "groups": [
+    {
+      "routes": [
+        "channel",
+        "home",
+        "playlist",
+        "search",
+        "shorts",
+        "subscriptions",
+        "watch"
+      ],
+      "css": ":root{--rk-color-bg:#0f0f10;--rk-color-surface:#18181b;--rk-color-surface-2:#222226;--rk-color-text:#ececf1;--rk-color-text-muted:#a0a0ab;--rk-color-accent:#7aa2f7;--rk-color-accent-text:#0f0f10;--rk-color-border:#2e2e33;--rk-color-link:#8ab4f8;--rk-color-danger:#f7768e;--rk-color-success:#9ece6a;--rk-font-body:system-ui, sans-serif;--rk-font-heading:system-ui, sans-serif;--rk-font-mono:ui-monospace, monospace;--rk-font-scale:1;--rk-radius-sm:4px;--rk-radius-md:8px;--rk-radius-lg:16px;--rk-space-scale:1;--rk-motion-duration:150ms;--rk-s-max-width:1280px}:is(ytd-masthead){box-shadow:none}:is(yt-chip-cloud-renderer,chip-bar-view-model){opacity:0.85}ytd-rich-shelf-renderer[is-shorts],ytd-reel-shelf-renderer,grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2){display:none!important}ytm-shorts-lockup-view-model-v2{display:none!important}"
+    },
+    {
+      "routes": [
+        "watch"
+      ],
+      "css": ":is(ytd-watch-flexy #primary){max-width:var(--rk-s-max-width)!important}"
+    }
+  ],
+  "sensitiveRoutes": [
+    "account"
+  ],
+  "routeTable": {
+    "home": [
+      "/"
+    ],
+    "watch": [
+      "/watch"
+    ],
+    "shorts": [
+      "/shorts/*"
+    ],
+    "search": [
+      "/results"
+    ],
+    "subscriptions": [
+      "/feed/subscriptions"
+    ],
+    "playlist": [
+      "/playlist"
+    ],
+    "channel": [
+      "/@*",
+      "/channel/*",
+      "/c/*",
+      "/user/*"
+    ],
+    "account": [
+      "/account*",
+      "/paid_memberships*",
+      "/purchases*",
+      "/premium*"
+    ]
+  },
+  "rawSelectors": false,
+  "components": [
+    "chip-bar",
+    "home-feed",
+    "masthead",
+    "primary-column",
+    "shorts-card",
+    "shorts-shelf"
+  ],
+  "assets": [],
+  "navigationEvents": [
+    "yt-navigate-finish"
+  ],
+  "protectedSelectors": [
+    "ytd-consent-bump-v2-lightbox"
+  ],
+  "hash": "1407ffc132d47c"
+}

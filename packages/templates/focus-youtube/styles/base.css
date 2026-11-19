@@ -1,0 +1,8 @@
+/* Focus YouTube: quieter chrome on every page. */
+:--masthead {
+  box-shadow: none;
+}
+
+:--chip-bar {
+  opacity: 0.85;
+}

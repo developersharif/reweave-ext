@@ -28,6 +28,7 @@ export const ComponentSchema = v.object({
 });
 
 export const AdapterSchema = v.object({
+  $schema: v.optional(v.pipe(v.string(), v.maxLength(200))),
   schemaVersion: v.literal(1),
   id: kebab,
   version: VersionSchema,

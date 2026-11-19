@@ -81,5 +81,11 @@
   "assets": [
     "inter"
   ],
-  "hash": "11f4bf5d7b65a1"
+  "navigationEvents": [
+    "yt-navigate-finish"
+  ],
+  "protectedSelectors": [
+    "ytd-consent-bump-v2-lightbox"
+  ],
+  "hash": "05af72f55912dc"
 }

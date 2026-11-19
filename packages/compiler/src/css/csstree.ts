@@ -1,3 +1,4 @@
+/// <reference path="./css-tree-subpaths.d.ts" />
 /** Single import point for css-tree, via subpaths (smaller bundle). */
 import generate from 'css-tree/generator';
 import parse from 'css-tree/parser';

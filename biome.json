@@ -17,6 +17,7 @@
       "!packages/test-fixtures",
       "!packages/compiler/test/golden",
       "!packages/compiler/test/dialect/__golden__",
+      "!packages/templates/test/__golden__",
       "!packages/schema/json"
     ]
   },
