@@ -1,0 +1,5 @@
+/* Watch page: cap the reading column. YouTube's own #primary rule is more specific
+   (an id plus two classes/attributes), so this one needs !important. */
+:--primary-column {
+  max-width: setting(maxWidth) !important;
+}

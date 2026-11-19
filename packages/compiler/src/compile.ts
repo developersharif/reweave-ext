@@ -6,6 +6,8 @@
 import {
   type Adapter,
   CODES,
+  type CompiledGroup,
+  type CompiledTemplate,
   type Diagnostic,
   diag,
   hasErrors,
@@ -39,31 +41,8 @@ export interface CompileInput {
   tokenOverrides?: TokenMap;
 }
 
-export interface CompiledGroup {
-  /** Adapter route ids where this sheet is enabled. */
-  routes: string[];
-  css: string;
-}
-
-export interface CompiledTemplate {
-  engineVersion: string;
-  templateId: string;
-  templateVersion: string;
-  adapterId: string;
-  adapterVersion: string;
-  /** Fast content hash of everything below (cache key, not an integrity check). */
-  hash: string;
-  /** In cascade order; the first group holds the generated `:root` tokens. */
-  groups: CompiledGroup[];
-  /** Routes where nothing may apply, whatever the groups say. */
-  sensitiveRoutes: string[];
-  /** Route id → URL path patterns, for the runtime's route matcher. */
-  routeTable: Record<string, string[]>;
-  rawSelectors: boolean;
-  /** Components and assets the CSS actually uses (health + unused-asset checks). */
-  components: string[];
-  assets: string[];
-}
+/** The output contract (D-021) lives in `@reskin/schema` so the runtime can validate it. */
+export type { CompiledGroup, CompiledTemplate };
 
 export interface CompileResult {
   ok: boolean;
@@ -234,6 +213,8 @@ export function compileTemplate(input: CompileInput): CompileResult {
   let rawSelectors = false;
   let totalBytes = 0;
   let totalSelectors = 0;
+  let totalDeclarations = 0;
+  let totalImportant = 0;
 
   target.styles.forEach((style, si) => {
     const sp = `${tp}.styles.${si}`;
@@ -251,6 +232,8 @@ export function compileTemplate(input: CompileInput): CompileResult {
     d.push(...s.diagnostics);
     totalBytes += s.stats.bytes;
     totalSelectors += s.stats.selectors;
+    totalDeclarations += s.stats.declarations;
+    totalImportant += s.stats.important;
     const r = resolveDialect(s.ast, {
       file: style.file,
       adapter,
@@ -329,6 +312,18 @@ export function compileTemplate(input: CompileInput): CompileResult {
         { path: `${tp}.styles` },
       ),
     );
+  if (
+    totalDeclarations >= LIMITS.importantMinDeclarations &&
+    totalImportant / totalDeclarations > LIMITS.importantShare
+  )
+    d.push(
+      diag(
+        CODES.CSS_IMPORTANT_HEAVY,
+        'warning',
+        `${totalImportant} of ${totalDeclarations} declarations use !important; keep it for beating inline or !important site styles`,
+        { path: `${tp}.styles` },
+      ),
+    );
   if (rawSelectors && target.rawSelectors !== true)
     d.push(
       diag(
@@ -367,6 +362,12 @@ export function compileTemplate(input: CompileInput): CompileResult {
     rawSelectors,
     components: [...used.components].sort(),
     assets: [...used.assets].sort(),
+    navigationEvents: [...(adapter.navigationEvents ?? [])],
+    protectedSelectors: Object.keys(adapter.components)
+      .sort()
+      .flatMap((id) =>
+        adapter.components[id]?.protected ? [adapter.components[id].selector] : [],
+      ),
   };
   return { ok: true, diagnostics: d, output: { ...body, hash: hashString(JSON.stringify(body)) } };
 }

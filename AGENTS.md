@@ -81,17 +81,20 @@ Requirements: Node ≥ 22 (`.nvmrc` pins 24) and pnpm 12 (`packageManager` field
 | `pnpm install` | Installs the workspace. Also runs `wxt prepare`, which generates `apps/extension/.wxt/` types |
 | `pnpm dev` | WXT dev mode for Chrome with auto-reload. Dev builds add `tabs`/`scripting`; that's expected |
 | `pnpm --filter @reskin/extension dev:firefox` | Firefox dev mode |
-| `pnpm check` | **Run before every commit.** typecheck → Biome lint → unit tests → Chrome + Firefox builds → `check:manifest` guard → JSON Schema freshness |
-| `pnpm test` | Vitest in every package (extension tests use `WxtVitest` + `fakeBrowser`) |
-| `pnpm test:e2e` | Playwright e2e against the built extension. Run `pnpm build` first; the first time also run `pnpm --filter @reskin/extension exec playwright install chromium` |
+| `pnpm check` | **Run before every commit.** typecheck → Biome lint → unit tests → Chrome + Firefox builds → `check:manifest` guard → `check:size` bundle budgets → JSON Schema freshness |
+| `pnpm test` | Vitest in every package (extension tests use `WxtVitest` + `fakeBrowser`). Adapter tests run selectors in Playwright's Chromium (D-030): the first time, run `pnpm --filter @reskin/extension exec playwright install chromium` |
+| `pnpm test:e2e` | Builds the `RK_E2E` extension (`.output/chrome-mv3-e2e`, site access pre-granted, D-029), then runs Playwright against fixture-backed youtube.com. No live network |
 | `pnpm format` | Biome auto-fix (format + organize imports) |
 | `pnpm --filter @reskin/extension zip` | Store-ready zips in `apps/extension/.output/` |
 | `pnpm reskin validate <dir> [--adapter <adapter.json>]` | Validate a template directory (manifest, files, CSS sanitizer, dialect). Add `--json` for machine output |
 | `pnpm reskin compile <dir> --adapter <file> [--set id=value] [--variant id] [--palette file]` | Print the compiled output for one adapter |
 | `pnpm --filter @reskin/schema gen:json-schema` | Regenerate `packages/schema/json/*.v1.json` after changing a schema |
 | `pnpm --filter @reskin/compiler exec vitest run -u` | Rewrite compiler golden files. Review the diff before committing |
+| `node apps/extension/scripts/live-check-youtube.mjs [--profile <dir>]` | **Manual, live site.** Counts adapter component matches on real YouTube pages; `--profile` opens a headed, signed-in profile. Never in CI |
+| `node apps/extension/scripts/capture-youtube-fixtures.mjs` | **Manual, live site.** Re-captures the structure-only YouTube fixtures. Review the diff; adapter tests must still pass |
+| `cd apps/extension && pnpm build:e2e && node spikes/live-youtube/smoke.mjs` | **Manual, live site.** The real extension on live YouTube: apply, SPA navigation, live settings, "Original site" |
 
-## 7. Layout notes (M0, M1)
+## 7. Layout notes (M0–M2)
 
 - `apps/extension/src/entrypoints/` contains **only** WXT entrypoints. Any file there, including tests, is treated as an entrypoint. Keep entrypoints thin: put logic in `src/<area>/` modules with tests beside them.
 - `apps/extension/e2e/` has its own tsconfig with Node types. Extension source must not see Node types.
@@ -102,4 +105,9 @@ Requirements: Node ≥ 22 (`.nvmrc` pins 24) and pnpm 12 (`packageManager` field
 - Biome must not touch template-dialect CSS, fixtures or golden files (`biome.json` excludes `packages/**/*.css`, `packages/test-fixtures/**`, golden dirs and `packages/schema/json/**`). Formatting them would break golden comparisons.
 - New sanitizer rules start as an attack fixture in `packages/compiler/test/attacks/` with a `/* expect: CODE */` header.
 - Diagnostic codes live in `packages/schema/src/diagnostics.ts`. Add new codes there; never rename one that shipped.
+- The content script imports only `@reskin/schema/routes` and `@reskin/schema/runtime` (subpaths), never the package root, and never `@reskin/compiler`. `check:size` fails the build if React or the compiler ends up in it.
+- Supported sites live in `apps/extension/src/shared/sites.ts`. The manifest's `optional_host_permissions` are generated from it; adding a site means adding an adapter in `packages/adapters` and an entry there.
+- Background state changes go through `exclusive()` (`src/background/exclusive.ts`) so storage and content-script registrations are never changed by two handlers at once.
+- `permissions` and `scripting` aren't implemented by WXT's fake browser: mock them with `vi.spyOn` in tests (see `src/background/background.test.ts`).
+- Fixtures under `packages/test-fixtures/` are captured from live pages by script and must stay structure-only; a test enforces it.
 

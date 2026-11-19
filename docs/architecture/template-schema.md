@@ -207,6 +207,7 @@ The allowlist is implemented in `packages/compiler/src/sanitize/allowlist.ts`; t
 - **Text shown on the page:** strings longer than 3 characters in `content`, `quotes`, `list-style-type` or `list-style` → **flagged for human review** (UI-redress risk: fake support numbers, altered prices). Short strings, counters and `attr()` are fine. See security-model §3.
 - **Overlays:** a rule with `position: fixed|absolute` plus `pointer-events: none` (click-through decoy), or `position: fixed` with `z-index` ≥ 10 000, → **flagged for human review**.
 - **Selector limits:** ≤ 4 levels of `:has()` nesting (error). `:has()` with a descendant combinator on `*`, `html`, `body`, `:root` or a bare compound → warning (performance). Total selectors ≤ 5 000 per template (error).
+- **`!important` share:** if more than half of a target's declarations (and at least 20) use `!important`, the compiler warns `CSS_IMPORTANT_HEAVY` (maintainability; extension-architecture §3.4).
 - **Protected components** can't be styled at all: any selector using a protected component (`:--consent-dialog`, `:--consent-dialog button`), or a raw selector naming one of its elements, ids or classes, is an error. This covers every hiding technique by construction (display, visibility, opacity, transforms, clip-path, off-screen, zero font size). Hiding an *ancestor* can't be caught statically; the runtime pauses templates while a protected component is present (T-2.9).
 - **Size limits:** ≤ 256 KB total CSS source; ≤ 2 MB total bundle including assets.
 - **Sensitive routes:** adapters mark routes such as login, checkout, account security, and payments as `sensitive: true`. The engine never applies templates there. Not overridable by templates.
@@ -364,7 +365,7 @@ Adapters live in the monorepo (`packages/adapters/<site>/adapter.json`), are ope
 
 - `components.*.selector`: selector list. Prefer stable hooks in this order: custom element names → `data-testid`/`data-*` → ARIA roles/labels → ids → class names. **Hashed/atomic class names are prohibited** in adapters (they're what breaks).
 - `shadowRoots`: list of `{ host: <selector>, components: [...] }` for open shadow roots that need per-root style injection (e.g. Reddit's web components). See `extension-architecture.md` §4.
-- `navigationEvents`: optional site-specific DOM event names that signal in-page navigation (a hint; the runtime has generic fallbacks, see `extension-architecture.md` §4).
+- `navigationEvents`: optional site-specific DOM event names, dispatched on `document`, that mean "in-page navigation finished, the new page is rendered". The runtime detects URL changes itself (Navigation API, `popstate`, poll); these events only end the grace period in which the previous route's sheets stay on, and they trigger probes (`extension-architecture.md` §4).
 - `probes`: cheap `querySelector` checks the content script runs after load (and occasionally after navigation) to compute **local health**. Aggregate, anonymous probe results (opt-in) drive adapter breakage alerts. See `security-model.md` §5 for what is and isn't sent.
 
 ### 11.1 Compatibility model

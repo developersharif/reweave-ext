@@ -3,6 +3,10 @@
   "title": "Site adapter v1",
   "type": "object",
   "properties": {
+    "$schema": {
+      "type": "string",
+      "maxLength": 200
+    },
     "schemaVersion": {
       "const": 1
     },

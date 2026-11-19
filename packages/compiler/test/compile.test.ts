@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   flattenTokenTree,
   type Palette,
+  parseCompiled,
   type TemplateManifest,
   validatePalette,
 } from '@reskin/schema';
@@ -127,6 +128,21 @@ describe('spec example golden output', () => {
     const a = compileTemplate(base).output?.hash;
     expect(compileTemplate(base).output?.hash).toBe(a);
     expect(compileTemplate({ ...base, settings: { hideShorts: false } }).output?.hash).not.toBe(a);
+  });
+});
+
+describe('output contract', () => {
+  it('passes the runtime schema the content script validates with', () => {
+    const r = compileTemplate({
+      manifest: specManifest(),
+      sources: specSources(),
+      adapter,
+      assets: FAKE_ASSETS,
+    });
+    expect(r.output).toBeDefined();
+    expect(parseCompiled(r.output)).toEqual(r.output);
+    expect(r.output?.navigationEvents).toEqual(['yt-navigate-finish']);
+    expect(r.output?.protectedSelectors).toEqual(['ytd-consent-bump-v2-lightbox']);
   });
 });
 
@@ -272,6 +288,17 @@ describe('compile errors', () => {
     expect(
       codes(compileTemplate({ manifest: future, adapter, sources: { 'styles/test.css': '' } })),
     ).toContain('ENGINE_UNSUPPORTED');
+  });
+
+  it('warns when most declarations are !important', () => {
+    const heavy = ':--masthead{color:red!important}'.repeat(15) + ':--masthead{margin:0}'.repeat(5);
+    const r = one(heavy);
+    expect(r.ok).toBe(true);
+    expect(r.diagnostics).toContainEqual(
+      expect.objectContaining({ code: 'CSS_IMPORTANT_HEAVY', severity: 'warning' }),
+    );
+    const few = one(':--masthead{color:red!important}'.repeat(5)).diagnostics.map((x) => x.code);
+    expect(few).not.toContain('CSS_IMPORTANT_HEAVY'); // too few declarations to judge
   });
 
   it('enforces size and selector limits across files', () => {

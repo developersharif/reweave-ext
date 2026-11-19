@@ -60,8 +60,10 @@ Acceptance: a new user goes from install to a restyled site in ≤ 4 clicks, wit
 └───────────────────────────────┘
 ```
 
-- **Active-site detection:** popup asks the background for the adapter matching the tab URL. States: *Supported & enabled*, *Supported, permission not granted* ("Enable on youtube.com"), *Not supported* ("We don't support this site yet — vote for it ↗"), *Sensitive route* ("Templates are paused on this page").
-- **Toggle** = per-site enable/disable; **global pause** in options. Changes apply live without reload (style swap).
+- **Active-site detection:** popup matches the tab URL against the supported sites. States: *Supported & enabled*, *Supported, permission not granted* ("Enable on youtube.com"), *Not supported* ("We don't support this site yet — vote for it ↗"), *Sensitive route* ("Templates are paused on this page").
+  - Without the `tabs` permission, the browser hides the URL of sites we can't access yet. Then the popup lists the supported sites that still need enabling, each with an "Enable" button (D-032).
+- **Toggle** = per-site enable/disable. **Global pause** sits in the popup footer until the options page exists (M3). Changes apply live without reload (style swap).
+- Built in M2 (T-2.7): detection states, toggle, template switch, variant, settings, reset. Later: health status (M3), palette (M3), browse more (M7), "Looks broken?" (M8), Creator mode (M5).
 - **Switch template** lists installed templates for this adapter + "Original site".
 - **Looks broken?** → one-screen form: checkboxes for what's wrong, optional comment, shows exactly what will be sent (template id/version, adapter id/version, failing probe ids, browser version). No URL, no screenshot unless the user attaches one manually.
 

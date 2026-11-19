@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./json/*": "./json/*"
+    "./json/*": "./json/*",
+    "./routes": "./src/routes.ts",
+    "./runtime": "./src/runtime.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
@@ -20,5 +22,6 @@
     "@valibot/to-json-schema": "1.8.0",
     "@reskin/test-fixtures": "workspace:*",
     "@types/node": "^24"
-  }
+  },
+  "sideEffects": false
 }

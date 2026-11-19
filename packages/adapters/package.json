@@ -4,10 +4,21 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./*": "./*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test",
     "test": "vitest run"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@reskin/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@reskin/compiler": "workspace:*",
+    "@reskin/test-fixtures": "workspace:*",
+    "@types/node": "^24",
+    "@playwright/test": "1.65.1"
   }
 }

@@ -1,0 +1,185 @@
+{
+  "$schema": "../../schema/json/adapter.v1.json",
+  "schemaVersion": 1,
+  "id": "youtube",
+  "version": "1.0.0",
+  "name": "YouTube",
+  "hosts": ["www.youtube.com"],
+  "routes": {
+    "home": { "path": "/" },
+    "watch": { "path": "/watch" },
+    "shorts": { "path": "/shorts/*" },
+    "search": { "path": "/results" },
+    "subscriptions": { "path": "/feed/subscriptions" },
+    "playlist": { "path": "/playlist" },
+    "channel": { "path": ["/@*", "/channel/*", "/c/*", "/user/*"] },
+    "account": {
+      "path": ["/account*", "/paid_memberships*", "/purchases*", "/premium*"],
+      "sensitive": true
+    }
+  },
+  "components": {
+    "app": { "selector": "ytd-app", "description": "The whole app shell" },
+    "masthead": { "selector": "ytd-masthead", "description": "Top bar" },
+    "masthead-logo": {
+      "selector": "ytd-masthead ytd-topbar-logo-renderer",
+      "description": "Logo in the top bar"
+    },
+    "search-box": {
+      "selector": "ytd-masthead yt-searchbox",
+      "description": "Search field in the top bar"
+    },
+    "guide-drawer": {
+      "selector": "tp-yt-app-drawer#guide",
+      "description": "Slide-out drawer that holds the full sidebar"
+    },
+    "guide-sidebar": {
+      "selector": "ytd-guide-renderer",
+      "routes": ["home", "search", "shorts", "subscriptions", "playlist", "channel"],
+      "description": "Full left sidebar (not rendered on watch pages until opened)"
+    },
+    "guide-section": {
+      "selector": "ytd-guide-section-renderer",
+      "routes": ["home", "search", "shorts", "subscriptions", "playlist", "channel"],
+      "description": "A group of links in the sidebar"
+    },
+    "guide-entry": {
+      "selector": "ytd-guide-entry-renderer",
+      "routes": ["home", "search", "shorts", "subscriptions", "playlist", "channel"],
+      "description": "One link in the sidebar"
+    },
+    "mini-guide": { "selector": "ytd-mini-guide-renderer", "description": "Narrow icon sidebar" },
+    "page-content": {
+      "selector": "ytd-page-manager#page-manager",
+      "description": "Area below the top bar that holds the current page"
+    },
+
+    "home-page": { "selector": "ytd-browse[page-subtype='home']", "routes": ["home"] },
+    "home-feed": {
+      "selector": "ytd-browse[page-subtype='home'] ytd-rich-grid-renderer",
+      "routes": ["home"],
+      "description": "Recommendation grid (logged-out users without history see a prompt instead of videos)"
+    },
+    "chip-bar": {
+      "selector": "yt-chip-cloud-renderer, chip-bar-view-model",
+      "routes": ["search", "watch"],
+      "description": "Row of filter chips"
+    },
+    "video-card": {
+      "selector": "ytd-rich-item-renderer, ytd-video-renderer, yt-lockup-view-model:not(ytd-rich-item-renderer *)",
+      "routes": ["watch", "search", "channel", "playlist"],
+      "description": "One video in a grid or list (outermost card element only)"
+    },
+    "shorts-card": {
+      "selector": "ytm-shorts-lockup-view-model-v2",
+      "routes": ["search", "channel"],
+      "description": "One Short in a shelf"
+    },
+    "shorts-shelf": {
+      "selector": "ytd-rich-shelf-renderer[is-shorts], ytd-reel-shelf-renderer, grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2)",
+      "routes": ["search", "channel"],
+      "description": "A row of Shorts inside a feed"
+    },
+
+    "watch-page": { "selector": "ytd-watch-flexy", "routes": ["watch"] },
+    "player": {
+      "selector": "ytd-watch-flexy #player-container-outer",
+      "routes": ["watch"],
+      "description": "Box around the video player (style the box, not the video)"
+    },
+    "primary-column": {
+      "selector": "ytd-watch-flexy #primary",
+      "routes": ["watch"],
+      "description": "Left column: player, title, comments"
+    },
+    "video-info": {
+      "selector": "ytd-watch-flexy ytd-watch-metadata",
+      "routes": ["watch"],
+      "description": "Title, channel and actions under the player"
+    },
+    "video-title": { "selector": "ytd-watch-metadata h1", "routes": ["watch"] },
+    "video-owner": {
+      "selector": "ytd-watch-metadata ytd-video-owner-renderer",
+      "routes": ["watch"],
+      "description": "Channel avatar, name and subscribe button"
+    },
+    "video-actions": {
+      "selector": "ytd-watch-metadata #actions",
+      "routes": ["watch"],
+      "description": "Like, share and more buttons"
+    },
+    "related-sidebar": {
+      "selector": "ytd-watch-flexy #secondary",
+      "routes": ["watch"],
+      "description": "Right column: related videos and panels"
+    },
+    "related-list": {
+      "selector": "ytd-watch-next-secondary-results-renderer",
+      "routes": ["watch"]
+    },
+    "comments": {
+      "selector": "ytd-watch-flexy ytd-comments#comments",
+      "routes": ["watch"],
+      "description": "Comments section"
+    },
+    "comment": {
+      "selector": "ytd-comment-thread-renderer",
+      "routes": ["watch"],
+      "description": "One comment with its replies"
+    },
+
+    "search-page": { "selector": "ytd-search", "routes": ["search"] },
+    "search-results": { "selector": "ytd-search ytd-section-list-renderer", "routes": ["search"] },
+
+    "shorts-page": { "selector": "ytd-shorts", "routes": ["shorts"] },
+    "shorts-player": {
+      "selector": "ytd-shorts ytd-reel-video-renderer",
+      "routes": ["shorts"],
+      "description": "One Short in the vertical player"
+    },
+
+    "channel-page": { "selector": "ytd-browse[page-subtype='channels']", "routes": ["channel"] },
+    "channel-header": {
+      "selector": "ytd-browse[page-subtype='channels'] #page-header",
+      "routes": ["channel"],
+      "description": "Banner, avatar and channel name"
+    },
+    "channel-tabs": {
+      "selector": "ytd-browse[page-subtype='channels'] yt-tab-group-shape",
+      "routes": ["channel"]
+    },
+
+    "playlist-page": { "selector": "ytd-browse[page-subtype='playlist']", "routes": ["playlist"] },
+    "playlist-header": {
+      "selector": "ytd-browse[page-subtype='playlist'] #page-header",
+      "routes": ["playlist"]
+    },
+
+    "subscriptions-page": {
+      "selector": "ytd-browse[page-subtype='subscriptions']",
+      "routes": ["subscriptions"]
+    },
+
+    "consent-dialog": {
+      "selector": "ytd-consent-bump-v2-lightbox",
+      "protected": true,
+      "description": "Cookie/consent dialog (EU). Templates can never style it"
+    }
+  },
+  "shadowRoots": [],
+  "navigationEvents": ["yt-navigate-finish"],
+  "probes": [
+    { "component": "masthead", "route": "home", "expect": "present" },
+    { "component": "home-feed", "route": "home", "expect": "present" },
+    { "component": "watch-page", "route": "watch", "expect": "present" },
+    { "component": "primary-column", "route": "watch", "expect": "present" },
+    { "component": "video-title", "route": "watch", "expect": "present" },
+    { "component": "related-sidebar", "route": "watch", "expect": "present" },
+    { "component": "search-results", "route": "search", "expect": "present" },
+    { "component": "video-card", "route": "search", "expect": "present" },
+    { "component": "shorts-player", "route": "shorts", "expect": "present" },
+    { "component": "channel-header", "route": "channel", "expect": "present" },
+    { "component": "playlist-header", "route": "playlist", "expect": "present" },
+    { "component": "subscriptions-page", "route": "subscriptions", "expect": "present" }
+  ]
+}

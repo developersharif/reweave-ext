@@ -45,7 +45,7 @@ export interface SanitizeResult {
   ok: boolean;
   ast: StyleSheet;
   diagnostics: Diagnostic[];
-  stats: { bytes: number; selectors: number };
+  stats: { bytes: number; selectors: number; declarations: number; important: number };
 }
 
 interface Pos {
@@ -92,7 +92,7 @@ export function sanitizeCss(source: string, file: string): SanitizeResult {
     out.push(diag(code, 'review', message, { file, ...pos }));
 
   const bytes = utf8Length(source);
-  const stats = { bytes, selectors: 0 };
+  const stats = { bytes, selectors: 0, declarations: 0, important: 0 };
   if (bytes > LIMITS.totalBytes) {
     err(CODES.CSS_SIZE_LIMIT, `File is ${bytes} bytes; the limit is ${LIMITS.totalBytes}`);
     return { ok: false, ast: parse('') as StyleSheet, diagnostics: out, stats };
@@ -203,6 +203,8 @@ export function sanitizeCss(source: string, file: string): SanitizeResult {
 
   const checkDeclaration = (decl: Declaration) => {
     const prop = decl.property.toLowerCase();
+    stats.declarations++;
+    if (decl.important) stats.important++;
     if (prop.startsWith(RESERVED_PREFIX))
       err(
         CODES.CSS_RESERVED_NAME,

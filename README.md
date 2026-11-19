@@ -7,7 +7,7 @@ Community-made redesigns for the sites you live on (YouTube first, then Reddit a
 - Templates are compiled on your device against platform-maintained **site adapters**, so a single adapter fix repairs every template that uses it.
 - Zero telemetry by default. Per-site permissions only.
 
-> **Status (2026-11-19): M1 engine core done** (template/adapter/palette schemas, CSS sanitizer with 34 attack fixtures, dialect compiler, `reskin` CLI). Next: M2, the extension runtime on YouTube. See [`docs/execution/session-handover.md`](docs/execution/session-handover.md).
+> **Status (2026-11-19): M2 extension runtime done.** The extension applies templates to YouTube: enable from the popup, styles survive in-page navigation, settings update live, "Original site" restores the page. It ships with one dev template, "Focus YouTube". Built on the M1 engine (schemas, CSS sanitizer, dialect compiler, `reskin` CLI). Next: M3, curated templates, palettes, health and the library. See [`docs/execution/session-handover.md`](docs/execution/session-handover.md).
 
 ## Why this exists, in one paragraph
 

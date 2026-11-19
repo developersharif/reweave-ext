@@ -4,24 +4,30 @@
 
 ---
 
-## Current state (2026-11-19, end of M1)
+## Current state (2026-11-19, end of M2)
 
-- **M0 Foundations: done.** The PR was merged into `main` (#1). CI is green on GitHub and uploads the Chrome/Firefox zips as artifacts.
-- **M1 Engine core: done** (branch `m1-engine`, not yet merged).
-  - `packages/schema`: Valibot schemas for templates, adapters and palettes (D-025); semantic checks; stable diagnostic codes (`src/diagnostics.ts`); token contract `standard/v1` with value validation; minimal semver; generated JSON Schemas in `json/`.
-  - `packages/compiler`: sanitizer (allowlist walk, escapes and parse errors fail closed), dialect resolver (`:--x`, `token()`, `setting()`, `asset()`, `@setting`), tokens/settings resolution, route-group output (D-021 output contract), `reskin` CLI (`pnpm reskin validate|compile`).
-  - Tests: 84 schema tests (44 invalid-manifest fixtures), 97 compiler tests (34 attack fixtures, benign corpus, golden files, CLI). A 256 KB template compiles in ~70 ms (median, warm).
-  - Fixtures: the spec example template, the §11 adapter and a DTCG palette live in `packages/test-fixtures/`.
-- **Dialect decisions (D-026):** `:--name` kept; tokens are `token(color-bg)` (hyphen, not dot); no CSS nesting in v1; protected components can't be styled at all (D-028).
-- **Nothing in the extension uses the compiler yet.** That's M2 (T-2.5, T-2.10).
+- **M0 Foundations: done** (#1). **M1 Engine core: done** (#2, merged as 612ea39).
+- **M2 Extension runtime + YouTube: done** on branch `m2-runtime` (not yet committed or merged).
+  - **Spikes:** injection (T-2.1) and navigation (T-2.2) were measured on live YouTube, technical-research §5. D-021 is confirmed; the navigation strategy is D-031.
+  - **YouTube adapter v1** (`packages/adapters/youtube`): 8 routes (account sensitive), 38 components (1 protected), 12 probes, `yt-navigate-finish`.
+    - Seven structure-only fixtures, captured by script.
+    - Tests run selectors in headless Chromium (D-030).
+  - **Background** (`apps/extension/src/background/`): registry, compile service, content-script registration, migrations, and a validated router that accepts extension pages only. State changes are serialized. `permissions.onAdded` enables a site.
+  - **Content script** (13.8 KB): adopted sheets per route group, navigation with a grace period, sensitive routes, live `storage.onChanged`, pause, protected guard (T-2.9).
+  - **Popup** (React): detection states without `tabs` (D-032), on/off, template switch including "Original site", variant, generated settings controls, reset, global pause.
+  - **Dev template** `reskin/focus-youtube` (`packages/templates`).
+  - **Guards:** `check:size` (content ≤ 25 KB, no React or compiler; SW ≤ 60 KB gzip, now 42 KB).
+  - **Tests:**
+    - unit: 96 schema, 99 compiler, 20 adapter, 3 template, 28 extension;
+    - e2e: 6 against fixture-backed youtube.com (`RK_E2E` build, D-029);
+    - manual live smoke on real YouTube (logged out): all checks passed, no extension errors.
+- **Founder checks (2026-11-19):** the logged-in live check (T-2.11) passed, with every component matched on all 7 pages. The founder also tested the extension by hand. The permission prompt can't be automated (D-029), so re-test it by hand when the enable flow changes.
 
 ## Next action
 
-**M2, extension runtime + YouTube.** Start with the two spikes, which can run in parallel:
-- **T-2.1** injection spike on live YouTube (adoptedStyleSheets vs `<style>`, FOUC numbers);
-- **T-2.2** navigation spike.
+**M3, curated templates, palettes, health and library.** Start with the first `todo` task in the M3 table of the tracker.
 
-T-2.3 (YouTube adapter v1) can start at the same time: it only needs T-1.1. Then T-2.4 → T-2.5 → T-2.6 → T-2.7, plus T-2.8 to T-2.10. New in M2: T-2.9 (runtime protected-component guard) and T-2.10 (service-worker bundle-size guard).
+Open question carried from M2: D-032. Until `activeTab` arrives (M5), the popup can't recognise a supported site before it's enabled. Revisit if that confuses people in testing.
 
 ## Open questions for the founder
 
@@ -35,3 +41,4 @@ T-2.3 (YouTube adapter v1) can start at the same time: it only needs T-1.1. Then
 | 2026-11-19 | Research, naming, strategy, architecture, roadmap | Docs created; research partially interrupted by founder request | T-0.1 |
 | 2026-11-19 | M0 foundations | T-0.1–T-0.6 done; check and e2e green locally | M1 (T-1.1, T-1.2, T-1.3a) |
 | 2026-11-19 | M1 engine core | T-1.1–T-1.7 done; D-025–D-028; `pnpm check` green | M2 (T-2.1, T-2.2, T-2.3) |
+| 2026-11-19 | M2 extension runtime | T-2.1–T-2.11 done (T-2.11: founder's logged-in check); D-029–D-032; `pnpm check` + 6 e2e green; live smoke passed | M3 |

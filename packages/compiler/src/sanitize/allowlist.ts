@@ -196,6 +196,9 @@ export const LIMITS = {
   hasDepth: 4,
   /** z-index at or above this on a fixed element is flagged as a possible overlay. */
   overlayZIndex: 10_000,
+  /** Warn when more than this share of declarations is `!important` (and there are enough to judge). */
+  importantShare: 0.5,
+  importantMinDeclarations: 20,
 } as const;
 
 export const RESERVED_PREFIX = '--rk-';

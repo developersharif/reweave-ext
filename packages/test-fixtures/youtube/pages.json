@@ -1,0 +1,14 @@
+{
+  "capturedAt": "2026-11-19",
+  "loggedIn": false,
+  "viewport": "1440x900",
+  "pages": {
+    "home": { "path": "/", "route": "home" },
+    "watch": { "path": "/watch", "query": "?v=fixture", "route": "watch" },
+    "search": { "path": "/results", "query": "?search_query=fixture", "route": "search" },
+    "shorts": { "path": "/shorts/fixture", "route": "shorts" },
+    "channel": { "path": "/@fixture", "route": "channel" },
+    "subscriptions": { "path": "/feed/subscriptions", "route": "subscriptions" },
+    "playlist": { "path": "/playlist", "query": "?list=fixture", "route": "playlist" }
+  }
+}

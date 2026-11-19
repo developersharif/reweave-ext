@@ -1,0 +1,48 @@
+{
+  "$schema": "../../schema/json/template.v1.json",
+  "schemaVersion": 1,
+  "id": "reskin/focus-youtube",
+  "name": "Focus YouTube",
+  "summary": "Hide Shorts and, if you like, the home feed. Narrower watch page for easier reading.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "authors": [{ "handle": "reskin" }],
+  "category": "focus",
+  "tags": ["focus", "no-shorts", "dev"],
+  "targets": [
+    {
+      "adapter": "youtube",
+      "adapterRange": "^1.0.0",
+      "styles": [
+        { "file": "styles/base.css" },
+        { "file": "styles/watch.css", "routes": ["watch"] }
+      ],
+      "hide": [
+        { "component": "shorts-shelf", "when": "hideShorts" },
+        { "component": "shorts-card", "when": "hideShorts" },
+        { "component": "home-feed", "when": "hideHomeFeed", "routes": ["home"] }
+      ]
+    }
+  ],
+  "settings": [
+    { "id": "hideShorts", "type": "boolean", "label": "Hide Shorts", "default": true },
+    { "id": "hideHomeFeed", "type": "boolean", "label": "Hide home feed", "default": false },
+    {
+      "id": "maxWidth",
+      "type": "range",
+      "label": "Watch page width",
+      "min": 960,
+      "max": 1800,
+      "step": 40,
+      "unit": "px",
+      "default": 1280
+    }
+  ],
+  "previews": [
+    {
+      "file": "previews/cover.png",
+      "alt": "YouTube watch page with a narrower column and no Shorts",
+      "role": "cover"
+    }
+  ]
+}

@@ -50,6 +50,7 @@ Critical path to a public beta: **M0 → M1 → M2 → M3 → M6** (YouTube-only
 - **Acceptance (all on a fresh Chrome profile):** enable via popup (one permission prompt for youtube.com only) → template applied on reload with no visible flash on a typical load → home→watch SPA navigation switches route styles without reload → toggling a setting updates the open tab within ~200 ms → "Original site" removes all styles → no errors in page or SW consoles. Covered by an e2e test against fixtures.
 - **Testing:** unit (background modules), adapter fixture tests, e2e (Playwright + request interception), manual check on live youtube.com (logged out and logged in).
 - **Risks:** FOUC on slow machines; YouTube DOM variance (A/B tests, logged-in vs logged-out); Navigation API not observable from isolated world → fallbacks.
+- **Outcome (2026-11-19):** T-2.1–T-2.10 done. D-021 confirmed; D-029–D-032 recorded. The acceptance flow is covered by e2e tests against fixtures, and a manual smoke test on live YouTube (logged out) passed (`spikes/live-youtube/smoke.mjs`). The founder ran the logged-in live check (T-2.11: every component matched on all 7 pages) and tested the extension by hand. Automation can't click the permission prompt (D-029), so that step stays manual.
 
 ## M3 — Curated templates, palettes, health, library (≈5–7 days)
 

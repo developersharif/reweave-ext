@@ -5,6 +5,8 @@ export * from './adapter.ts';
 export * from './diagnostics.ts';
 export * from './palette.ts';
 export * from './patterns.ts';
+export * from './routes.ts';
+export * from './runtime.ts';
 export * from './semver.ts';
 export * from './template.ts';
 export * from './tokens.ts';

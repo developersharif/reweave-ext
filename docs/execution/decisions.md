@@ -101,10 +101,10 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Decision:** Vitest for schema/compiler/runtime units; Playwright with a persistent Chromium context loading the unpacked extension for e2e against **local DOM fixtures** (saved, sanitized snapshots of target pages). Live-site canaries run separately on a schedule (M8) and never gate PRs.
 
 ### D-021 — Route groups as separate adopted stylesheets; settings compiled in
-- **Status:** Accepted for the compiler output · 2026-11-19 (T-1.6). The injection half is still validated in T-2.1.
+- **Status:** Accepted · 2026-11-19. Compiler output in T-1.6; injection confirmed on live YouTube in T-2.1 (styles applied before first paint in 80/80 loads, sheets never dropped; technical-research §5.1).
 - **Output contract (T-1.6):** `{ engineVersion, templateId, templateVersion, adapterId, adapterVersion, hash, groups: [{ routes, css }], sensitiveRoutes, routeTable, rawSelectors, components, assets }`. `groups[0]` covers all target routes and starts with the generated `:root` rule; other groups follow in manifest order; hide rules are appended to their route's group. `hash` is a fast cache key (cyrb53), not an integrity check.
 - **Decision:** Each route-scoped style group compiles to its own `CSSStyleSheet` in `document.adoptedStyleSheets`; navigation toggles `sheet.disabled`. Settings and tokens are compiled into the CSS (blocks included/excluded; values as `:root` custom properties), so the page's DOM is never annotated.
-- **Why:** No selector rewriting for routes, no attributes the page can strip, no DOM markers for fingerprinting, O(1) work on navigation.
+- **Why:** No selector rewriting for routes, no attributes the page can strip, no DOM nodes or attributes for fingerprinting, O(1) work on navigation. (The page can still list adopted sheets; see R-18.)
 - **Revisit if:** adopted sheets prove unreliable on a target site (fallback: `<style>` kept last; extension-architecture §3.2).
 
 ### D-022 — Pin TypeScript 6.0.x (not 7.x)
@@ -145,3 +145,26 @@ Status values: `Accepted`, `Proposed` (needs founder confirmation), `Superseded`
 - **Decision:** any selector that uses a protected component (`:--consent-dialog`, `:--consent-dialog button`), or a raw selector naming one of its elements/ids/classes, is an error (`PROTECTED_COMPONENT_STYLED`). `hide` rules on protected components are errors (`PROTECTED_COMPONENT_HIDDEN`).
 - **Why:** stricter than the original list of hiding techniques in security-model T2, and simpler: there's no property list to keep up to date. Ancestor hiding and overlays need a runtime guard (T-2.9).
 
+### D-029 — An `RK_E2E` build grants supported-site access up front
+- **Status:** Accepted · 2026-11-19 (T-2.4)
+- **Decision:** `RK_E2E=1 wxt build` (`pnpm --filter @reskin/extension build:e2e`) writes `.output/chrome-mv3-e2e` with the supported sites moved into `host_permissions`. Playwright loads that build, so tests can enable a site without the permission dialog, which automation can't click. The store build is unchanged: `check:manifest` runs on `.output/chrome-mv3` and `firefox-mv3`, which still have no `host_permissions`.
+- **Why:** the alternative, driving the native permission prompt, isn't possible in Playwright. Granting at build time only changes *when* access exists, not what the code does with it: enable, registration and compile still go through the same paths.
+- **Revisit if:** a test needs the not-granted state (the popup's "Enable" flow is covered by unit tests on `popupView` instead), or Chrome ships an automation hook for permission prompts.
+
+### D-030 — Adapter tests evaluate selectors in headless Chromium
+- **Status:** Accepted · 2026-11-19 (T-2.3)
+- **Decision:** `packages/adapters` tests load each fixture into Playwright's headless Chromium and count matches there. They don't use happy-dom or jsdom. CI installs Chromium before `pnpm check`.
+- **Why:** happy-dom 21.0.4 disagreed with Chromium on `:not()` with complex selectors and on parsing these pages (technical-research §5.3). An adapter test that passes in a different selector engine proves nothing about the browser templates run in.
+- **Cost:** about 2 s of test time and a Chromium download in CI (already needed for e2e).
+
+### D-031 — Navigation: detect URL changes generically; site events only end a grace period
+- **Status:** Accepted · 2026-11-19 (T-2.2)
+- **Decision:** the content script detects URL changes with the Navigation API's `currententrychange`, then `popstate`/`pageshow`, then a 750 ms poll while the page is visible. When the route changes, the previous route's sheets stay on until the adapter's `navigationEvents` fire (YouTube: `yt-navigate-finish`) or 1.5 s pass, so the old page doesn't lose its styles before the new one renders. Sensitive routes end the grace period immediately.
+- **Why:** measured on live YouTube (technical-research §5.2). `currententrychange` fires 1–2 ms after the URL change and is visible from the isolated world. `yt-navigate-finish` comes 0.5–1.1 s later, once the new page renders. Waiting for site events alone would leave the new page unstyled. Switching on the URL alone would unstyle the old page while it's still on screen.
+- **Revisit if:** a site renders the new page before changing the URL, or the poll shows up in performance traces.
+
+### D-032 — Popup finds the current site without `tabs` or `activeTab`
+- **Status:** Accepted · 2026-11-19 (T-2.7)
+- **Decision:** the popup reads the active tab's URL with `tabs.query`. Without the `tabs` permission, Chrome reveals that URL only for origins we hold a host permission for. When the URL is hidden, the popup lists the supported sites that still need enabling, each with an "Enable" button, or says "Not supported here" once every supported site is granted. `permissions.onAdded` enables the site in the background, so granting access from the browser's own site-access menu also works.
+- **Why:** keeps the permission set at `storage` + `scripting` + optional hosts (D-011). The cost: on a supported site that isn't enabled yet, the popup can't tell that you're on it, so it shows the list instead of "Enable on www.youtube.com".
+- **Revisit if:** user testing shows the list confuses people. `activeTab` (planned for M5) would fix it, at the price of moving that permission earlier, which needs its own decision.
